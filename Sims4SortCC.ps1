@@ -1377,7 +1377,7 @@ Function Initialize-AutoSorting ($messyfolder) {
 }
 
 Function Start-CleanAndSortFolder ($messyfolder) {
-    #Initialize-TidyCharacters $messyfolder
+    Initialize-TidyCharacters $messyfolder
     Initialize-AutoSorting $messyfolder
 }
 
