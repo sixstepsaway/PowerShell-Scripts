@@ -1,10 +1,3 @@
-#HOLDING
-
-
-
-#VARS
-
-$organizationalFolders = @("00_All", "00a_Fantasy", "00b_SciFi", "00c_Futuristic", "00d_Grunge", "00f_DystopianApocalypse", "00g_Cyberpunk", "01_Ancient", "02_EarlyCiv", "03_Medieval (476CE)", "04_Renaissance (1300)", "05_Tudors (1485)", "06_Colonial (1620)", "07_Baroque (1700)", "08_IndustrialAge (1760)", "09_Rococo (1730)", "10_OldWest (1865)", "11a_Victorian (1890)", "11b_Steampunk", "12_1910s", "13_1920s", "14_1930s", "15_1940s", "16_1950s", "17_1960s", "18_1970s", "19_1980s", "20_1990s", "21_2000s", "22_2010s", "Modern", "General", "Adult", "SFW", "NPCs & Townies", "Life Spans", "Root", "TwistedMexi", "Preteen Mod")
 
 Function Out-Script {
     Write-Host "Finishing up."
@@ -62,26 +55,289 @@ Function Initialize-TidyCharacters ($messyfolder) {
     <#---17---#> "",
     <#---18---#> ""
     ) 
-
+    $foldersToIgnore = @("General", "Manual Sort", "Manual Sort - Historical", "Modern")
     for ($i=0; $matchlist.Count -gt $i; $i++) {        
         Get-ChildItem -Path $messyfolder -Depth 0 |
         Where-Object { $_.baseName.Contains($matchlist[$i]) } |
-        Rename-Item -NewName { ($_.baseName -replace [regex]::Escape($matchlist[$i]),$replacelist[$i]) + $_.Extension } -PassThru     
+        if ($foldersToIgnore -notcontains $_.Name) {
+            Rename-Item -NewName { ($_.baseName -replace [regex]::Escape($matchlist[$i]),$replacelist[$i]) + $_.Extension } -PassThru
+        }
+    }
+}
+
+Function Register-Package {
+    param(
+        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'Package')][bool]$package, 
+        [Parameter(Mandatory = $false, Position = 1, ParameterSetName = 'Type or Creator')][bool]$isType, 
+        [Parameter(Mandatory = $true, Position = 2, ParameterSetName = 'Package Number')][int]$packageCount, 
+        [Parameter(Mandatory = $false, Position = 3, ParameterSetName = 'Type')][string]$type, 
+        [Parameter(Mandatory = $false, Position = 4, ParameterSetName = 'Creator')][string]$creator, 
+        [Parameter(Mandatory = $false, Position = 5, ParameterSetName = 'Destination')][string]$destination, 
+        [Parameter(Mandatory = $true, Position = 6, ParameterSetName = 'Log File Location')][string]$logfile,
+        [Parameter(Mandatory = $true, Position = 7, ParameterSetName = 'Exist')][bool]$alreadymoved,
+        [Parameter(Mandatory = $true, Position = 8, ParameterSetName = 'Packages Checked')][array]$packagesChecked,
+        [Parameter(Mandatory = $false, Position = 9, ParameterSetName = 'Creator Found')][bool]$creatorfound,
+        [Parameter(Mandatory = $false, Position = 10, ParameterSetName = 'Moving')][bool]$creatorNoType,
+        [Parameter(Mandatory = $false, Position = 11, ParameterSetName = 'Return')][bool]$return)
+
+        if ($alreadymoved -eq $true) {
+            "#$packageCount `"$package`": This file already exists within the array. Skipping." | Out-File $logfile -Append
+        } elseif ($alreadymoved -eq $false) {
+            "#$packageCount `"$package`": This file has not yet been processed." | Out-File $logfile -Append
+        } elseif ($creatorNoType -eq $true){
+            "#$packageCount `"$package`": File matched as $creator, but we don't know the type. Moving to $destination." | Out-File $logfile -Append
+            $packagesChecked += $package
+            "#$packageCount : $package has been processed." | Out-File $logfile -Append
+        } elseif ($isType -eq $true) {
+            "#$packageCount `"$package`": File matched as $type. Continuing." | Out-File $logfile -Append
+        } elseif ($isType -eq $false -AND $creatorfound -eq $true) {
+            "#$packageCount `"$package`": File matched as $type by $creator. Moving to $destination." | Out-File $logfile -Append
+            $packagesChecked += $package
+            "#$packageCount : $package has been processed." | Out-File $logfile -Append
+        } elseif ($isType -eq $false -AND $creatorfound -eq $false) {
+            "#$packageCount `"$package`": File matched as $type with no matching creator. Moving to $destination." | Out-File $logfile -Append
+            $packagesChecked += $package
+            "#$packageCount : $package has been processed." | Out-File $logfile -Append
+        } elseif ($return -eq $true) {
+            "#$packageCount `"$package`": File did not match anything. Moving to $destination." | Out-File $logfile -Append
+            $packagesChecked += $package
+            "#$packageCount : $package has been processed." | Out-File $logfile -Append
+        }
+        
+    Return $packageCount, $packagesChecked
+}
+
+Function Initialize-AutoSorting {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, ParameterSetName = 'Unsorted Folder')]
+        [string]
+        $messyfolder,
+        [Parameter(Mandatory = $true, ParameterSetName = 'List of Creators')]
+        [array]
+        $creatorsList,
+        [Parameter(Mandatory = $true, ParameterSetName = 'List of CC Types')]
+        [array]
+        $typeOfCC,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Folders for CC')]
+        [array]
+        $folderForType,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Clean File Names')]
+        [bool]
+        $cleanFileNames
+    )
+
+    $messyGeneral = "$messyfolder\General\CC_Unmerged"
+    $messyModern = "$messyfolder\Modern\CC_Unmerged"
+
+    $creators = $creatorsList | Sort-Object -Uniq
+    $creators = $creators | Sort-Object { $_.length } -Descending
+
+    $folderContents = Get-ChildItem -File $messyfolder
+    $packageCount = 0
+    $packagesChecked = @()
+    $logfile = "$messyFolder\Output.log"
+    "" | Set-Content $logfile
+
+    if ($cleanFileNames -eq $true) {
+        Initialize-AutoSorting $messyfolder
+    }
+
+    foreach ($package in $folderContents) {
+        if ($packagesChecked -contains $package) {
+            Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $true -packagesChecked $packagesChecked
+            $packageCount++
+            Continue
+        } else {
+            Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked
+            $packageCount++
+            $recoloristWitheringSims = "WitheringSims"
+            $recoloristJewl = "JewlRefined"
+            $recoloristCandy = "CandyNaturals"
+            if ($package.BaseName -ilike "*$recoloristWitheringSims*"){
+                Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $true -type $recoloristWitheringSims
+                if ($package.Basename -ilike "*roots*" -OR $package.Basename -ilike "*hairline*") {
+                    $destination = "$messyGeneral\Hairlines\$recoloristWitheringSims"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristWitheringSims -type "Hairline" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.Basename -ilike "*dyeaccessory*" -OR $package.BaseName -ilike "*headband*" -OR $package.BaseName -ilike "*hairband*" -OR $package.BaseName -ilike "*scrunchie*" -OR $package.BaseName -ilike "*clips*" -OR $package.BaseName -ilike "*ombre*" -OR $package.BaseName -ilike "*hairbow*" -OR $package.BaseName -ilike "*hairclips*") {
+                    $destination = "$messyGeneral\HairAccessories\$recoloristWitheringSims"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristWitheringSims -type "Hair Accessory" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*overlayacc*") { 
+                    $destination = "$messyModern\Accessories\ColorOverlays\$recoloristWitheringSims"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristWitheringSims -type "Color Overlay" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*top*" -OR $package.BaseName -ilike "*bottom*" -OR $package.BaseName -ilike "*bodysuit*" -OR $package.BaseName -ilike "*jeans*" -OR $package.BaseName -ilike "*outfit*" -OR $package.BaseName -ilike "*pants*" -OR $package.BaseName -ilike "*skirt*" -OR $package.BaseName -ilike "*sweater*" -OR $package.BaseName -ilike "*shirt*") {
+                    $destination = "$messyModern\Clothing\$recoloristWitheringSims"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristWitheringSims -type "Clothing" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*hair*" -OR $package.BaseName -ilike "*hairstyle*" -OR $package.BaseName -ilike "*twintails*" -OR $package.BaseName -ilike "*ponytail*" -OR $package.BaseName -ilike "*braid*" -OR $package.BaseName -ilike "*hairstyle*") {
+                    $destination = "$messyGeneral\HairRecolors\$recoloristWitheringSims"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristWitheringSims -type "Hair" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*sneakers*" -OR $package.BaseName -ilike "*shoes*") {
+                    $destination = "$messyModern\Shoes\$recoloristWitheringSims"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristWitheringSims -type "Shoes" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                }  elseif ($package.Basename -ilike "*acc*") {
+                    $destination = "$messyModern\Accessories\$recoloristWitheringSims"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristWitheringSims -type "Accessories" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } else {
+                    $destination = "$manualSort\$recoloristWitheringSims"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -destination $destination -creatorNoType $true -creator $recoloristWitheringSims
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                }
+            } elseif ($package.BaseName -ilike "*jewl*"){ 
+                Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $true -type $recoloristJewl
+                if ($package.Basename -ilike "*roots*" -OR $package.Basename -ilike "*hairline*") {
+                    $destination = "$messyGeneral\Hairlines\$recoloristJewl"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristJewl -type "Hairline" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.Basename -ilike "*dyeaccessory*" -OR $package.BaseName -ilike "*headband*" -OR $package.BaseName -ilike "*hairband*" -OR $package.BaseName -ilike "*scrunchie*" -OR $package.BaseName -ilike "*clips*" -OR $package.BaseName -ilike "*ombre*" -OR $package.BaseName -ilike "*hairbow*" -OR $package.BaseName -ilike "*hairclips*") {
+                    $destination = "$messyGeneral\HairAccessories\$recoloristJewl"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristJewl -type "Hair Accessory" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*overlayacc*") { 
+                    $destination = "$messyModern\Accessories\ColorOverlays\$recoloristJewl"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristJewl -type "Color Overlay" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*top*" -OR $package.BaseName -ilike "*bottom*" -OR $package.BaseName -ilike "*bodysuit*" -OR $package.BaseName -ilike "*jeans*" -OR $package.BaseName -ilike "*outfit*" -OR $package.BaseName -ilike "*pants*" -OR $package.BaseName -ilike "*skirt*" -OR $package.BaseName -ilike "*sweater*" -OR $package.BaseName -ilike "*shirt*") {
+                    $destination = "$messyModern\Clothing\$recoloristJewl"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristJewl -type "Clothing" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*hair*" -OR $package.BaseName -ilike "*hairstyle*" -OR $package.BaseName -ilike "*twintails*" -OR $package.BaseName -ilike "*ponytail*" -OR $package.BaseName -ilike "*braid*" -OR $package.BaseName -ilike "*hairstyle*") {
+                    $destination = "$messyGeneral\HairRecolors\$recoloristJewl"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristJewl -type "Hair" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*sneakers*" -OR $package.BaseName -ilike "*shoes*") {
+                    $destination = "$messyModern\Shoes\$recoloristJewl"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristJewl -type "Shoes" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                }  elseif ($package.Basename -ilike "*acc*") {
+                    $destination = "$messyModern\Accessories\$recoloristJewl"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristJewl -type "Accessories" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } else {
+                    $destination = "$manualSort\$recoloristJewl"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -destination $destination -creatorNoType $true -creator $recoloristJewl
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                }
+            } elseif ($package.BaseName -ilike "*candynaturals*"){ 
+                Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $true -type $recoloristCandy
+                if ($package.Basename -ilike "*roots*" -OR $package.Basename -ilike "*hairline*") {
+                    $destination = "$messyGeneral\Hairlines\$recoloristCandy"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristCandy -type "Hairline" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.Basename -ilike "*dyeaccessory*" -OR $package.BaseName -ilike "*headband*" -OR $package.BaseName -ilike "*hairband*" -OR $package.BaseName -ilike "*scrunchie*" -OR $package.BaseName -ilike "*clips*" -OR $package.BaseName -ilike "*ombre*" -OR $package.BaseName -ilike "*hairbow*" -OR $package.BaseName -ilike "*hairclips*") {
+                    $destination = "$messyGeneral\HairAccessories\$recoloristCandy"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristCandy -type "Hair Accessory" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*overlayacc*") { 
+                    $destination = "$messyModern\Accessories\ColorOverlays\$recoloristCandy"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristCandy -type "Color Overlay" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*top*" -OR $package.BaseName -ilike "*bottom*" -OR $package.BaseName -ilike "*bodysuit*" -OR $package.BaseName -ilike "*jeans*" -OR $package.BaseName -ilike "*outfit*" -OR $package.BaseName -ilike "*pants*" -OR $package.BaseName -ilike "*skirt*" -OR $package.BaseName -ilike "*sweater*" -OR $package.BaseName -ilike "*shirt*") {
+                    $destination = "$messyModern\Clothing\$recoloristCandy"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristCandy -type "Clothing" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*hair*" -OR $package.BaseName -ilike "*hairstyle*" -OR $package.BaseName -ilike "*twintails*" -OR $package.BaseName -ilike "*ponytail*" -OR $package.BaseName -ilike "*braid*" -OR $package.BaseName -ilike "*hairstyle*") {
+                    $destination = "$messyGeneral\HairRecolors\$recoloristCandy"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristCandy -type "Hair" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } elseif ($package.BaseName -ilike "*sneakers*" -OR $package.BaseName -ilike "*shoes*") {
+                    $destination = "$messyModern\Shoes\$recoloristCandy"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristCandy -type "Shoes" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                }  elseif ($package.Basename -ilike "*acc*") {
+                    $destination = "$messyModern\Accessories\$recoloristCandy"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -creator $recoloristCandy -type "Accessories" -destination $destination
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                } else {
+                    $destination = "$manualSort\$recoloristCandy"
+                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -destination $destination -creatorNoType $true -creator $recoloristCandy
+                    New-Item -ItemType Directory -Force -Path $destination
+                    Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+                }
+            } elseif ($package.BaseName -ilike "*lorysims*") {
+                $destination = "$messyModern\Cars\LorySims"
+                Register-Package -package $package -packageCount $packageCount -logfile $logfile -exist $false -packagesChecked $packagesChecked -istype $false -destination $destination -creatorNoType $true -creator "LorySims"
+                New-Item -ItemType Directory -Force -Path $destination
+                Move-Item <#-Verbose-#>-#> -Path $($package.FullName) -Destination $destination
+            } else {
+                for ($typeCount=0; $typeOfCC.Count -gt $typeCount; $typeCount++) {
+                    $typeCheck = $typeOfCC[$typeCount]
+                    $typeLength = $typeOfCC.Length
+                    if ($packagesChecked -contains $package) {
+                        Register-Package -package $package -packageCount $packageCount -logfile $logfile -alreadymoved $true -packagesChecked $packagesChecked
+                        Continue
+                    } else {
+                        if ($package.BaseName -ilike "*$typeCheck*") { #discover the type
+                            $mainFolder = $folderForType[$typeCount]
+                            for ($creatorsCount=0; $creators.Count -gt $creatorsCount; $creatorsCount++) {
+                                $creatorCheck = $creators[$creatorsCount]
+                                $creatorsLength = $creators.Length
+                                if ($package.BaseName -ilike "*$creatorCheck*") { #match to a creator
+                                    $destination = "$mainFolder\$creatorCheck"
+                                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -packagesChecked $packagesChecked -return $true -destination $destination -type $typeCheck -isType $false -creator $creatorCheck
+                                    New-Item -ItemType Directory -Force -Path $destination
+                                    Move-Item <#-Verbose-#> -Path $($package.FullName) -Destination "$destination\$($package.Name)"
+
+                                } elseif ($creatorsLength -le $creatorsCount) {
+                                    $destination = $mainFolder
+                                    Register-Package -package $package -packageCount $packageCount -logfile $logfile -packagesChecked $packagesChecked -return $true -destination $destination -type $typeCheck -isType $false -creatorfound $false
+                                    New-Item -ItemType Directory -Force -Path $destination
+                                    Move-Item <#-Verbose-#> -Path $($package.FullName) -Destination "$destination\$($package.Name)"
+                                }
+                            }
+                        } elseif ($typeLength -le $typeCount) {
+                            Register-Package -package $package -packageCount $packageCount -logfile $logfile -packagesChecked $packagesChecked -return $true -destination $manualSort
+                            New-Item -ItemType Directory -Force -Path $manualSort
+                            Move-Item <#-Verbose-#> -Path $($package.FullName) -Destination "$manualSort\$($package.Name)"
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }
 
 
 
-Function Initialize-AutoSorting ($messyfolder) {
-    
-    $creators = @("001studiok", "26ink", "4w25", "Aa", "Ada", "Adiec", "Afs", "Ah00b", "Ah00bxbop", "Akuiyumi", "Aladdin", "Alessandrae", "Alexaarr", "Alfsi", "Algue", "Aliens", "Alin22", "Alsoidyia", "Aluckyday", "Amelylina", "Ametrinesims", "Ancasims", "Angissi", "Animalcostumes", "Anto", "Arenetta", "Arethabee", "Artup", "Atashi77", "Awesomeajuga", "Axa", "Axa2019hairs", "Axa2020hairs", "Axaparishairs", "Axaspringcollectionhairs", "Azleia","Baddiesims", "Badkarma", "BatsFromWesteros", "Beardsps", "Beardsseleng", "Beccab323", "BedTS4", "Berrybloom", "Beo", "Bexosims", "Bimbosim", "Birksche", "Blahberrypancake", "Blewis", "Bluemoonsims", "Bluesparkling", "Blvckls", "Bm", "Bobur", "Bobur", "Boobish", "Boobishenrique", "Boobishsimmandy", "Bps", "Breathinsims", "Brianitesims", "Busenur41", "Busratr", "Bustedpixels", "Butterscotchsims", "Buzzard", "Bybukovka", "Cabsims", "Caearsims", "Caesarsims", "Candysims4", "Capitalco", "Caribbeanpatch", "Carol", "Caroll91", "Casteru", "Catpintwoh", "Catplnt", "Catus", "Chippedsim", "Christopher067", "Citrontart", "Clumsyalien", "Cmt", "Cosimetic", "Cottoncandy", "Cowconuts", "Crayolablaze", "Crazycupcake", "Crownsondisplay", "Crypticsim", "Csxdsxoxtoakiyo", "Cubersimsxoakiyo", "Cupidjuice", "Curbs", "Cyberaddix", "Daylifesims", "Db", "Desysimmer", "Devilicious", "Dfjkellyhb5", "Disanity", "Divadoom", "Divinecap", "Dntsr", "Dogsill", "Domi", "Dreamtart", "Druidsim", "Ebonix","Eirflower", "Ellesmea", "Emythegamer", "Enrique", "Enriquexsentate", "Ersch", "Evoxy", "Fadedsprings", "Faez", "Feline", "Feralpoodles", "Fifthscreations", "Fivesims", "Fivesimsxwildpixel", "Florauh", "Frostsims", "G1g2", "Georgiaglm", "Gildedghosts", "Glaza", "Glitterberrysims", "Gpme", "Grafity", "Gramsims", "Greenllamas", "Grimcookies", "Habsims", "Hallowsims", "Hgcc", "Historicalsimslife", "Hoa", "Holosprite", "Horns", "Ht0", "Ikarisims", "Imadako", "Imvikai", "Infinityonsims", "Infusedpeach", "Insects", "Isjao", "Isjaoleeleesims1", "Ivosims", "Ixs", "Jhcosmetics", "Joliebean", "Joliebean", "Joliebeanxhfoxsentate", "Kamiiri", "Katverse", "Kiara24", "Kiarazurk", "Kiko", "Kismetsims", "Kiwisims4", "Kotcat", "Kotcatxisjao", "Kotcatxisjao", "Kumikya", "Kxi", "Kyuusims", "Leeleesims1", "Lexits4", "Lightdeficient", "Lilasims", "Linkysims", "Linzlu", "Lollaleeloo", "Lunacress", "Lune", "Luumia", "Magicbot", "Mannequin", "Marigold", "Marsosims", "Mathcope", "Maxiematch", "Mb", "Meghewlett", "Melissasims", "Mellouwsim", "Meltingedge", "Melunn", "Mer", "Miiko", "Milkyki", "Mk9", "Mlys", "Modmax", "Mohkii", "Moonchildlovesthenight", "Moonpres", "Moriel", "Moxxxes", "Msmarysims", "Msqsims", "Mssims", "Musae", "Musicalsimmer", "Myobi", "Naevyssims", "Natalieauditore", "Nell", "Nesurii", "Nickname", "Noiranddarksims", "Nolansims", "Nolansimsxteanmoon", "Nooboos", "Noodles", "Noodlesremixsaurus", "Nords", "Normalsiim", "Notdaniella", "Notegain", "Novvvas", "Nsxnd", "Numberswoman", "Oakiyo", "Obscurus", "Okruee", "Oksanaoliver", "Onyxsims4", "Opiumhoney", "Oranos", "Overkillsimmer", "Paranormaladdonhairs", "Parise", "Pbox", "Peachibloom", "Peebs", "Pfoten", "Pinealexple", "Pinkpatchy", "Plumbobteasociety", "Pnf", "Pooklet", "Pridesim", "Ps", "Pupcake", "Pupusims", "Pxelboy", "Pyxis", "Qicc", "Qrsims", "Qwerty", "Qwertysims", "Raiichuu", "Raspberrysims", "Remussirion", "Renorasims", "Retropixels", "Ridgecookies", "Ridgeport", "Rigelsims", "Ropey", "Rubybird", "Rustyxsentate", "Rusty", "S4simomo", "Saartje77", "Salttry", "Satterlly", "Saurus", "Saurusxbop", "Savagesim", "Savvysweet", "Savvyxgrim", "Sayasims", "Sclub", "Seleng", "Semplicesims", "Serenity", "Servotea", "Severinka", "Sfs", "Sg5150", "Sheabuttyr", "Shespeakssimlish", "Shuiisims", "Shysimblr", "Sideburns", "Simancholy", "Simandy", "Simarillion", "Simbiance", "Simbience", "Simcelebrity00", "Simduction", "Simgguk", "Simiracle", "Simlotus", "Simmandy", "Simmerstesia", "Simplesimmer", "Simplicitay", "Simplifiedsimi", "Sims3melancholic", "Sims41ife", "Sims4pack", "Simserenity", "Simshini", "Simstefani", "Simstrouble", "Simsza", "Simtric", "Simtric", "Sina", "Singingpickles", "Skellysim", "Sll", "Sls", "Slythersim", "Softerhaze", "Soli", "Soloriya", "Sondescent", "Sonyasims", "Sparrows", "Spinningplumbobs", "Spookyspookysim", "Ssb", "Sspx", "Stephaniesims", "Stephanine", "Stretchskeleton", "Subtlestubble", "Sugarowl", "Suiminntyuusims", "Sulsul", "Suzue", "Suzue", "Sweettacoplumbob", "Sxb", "Sxltss", "Syaovu", "Sylviemy", "Teanmoon", "Tekrisims", "Thecrimsonsimmer", "Thekalino", "Thessia", "Tiefling", "Tong", "Toskami", "Toskasims", "Trillyke", "Tssskellysim", "Tts", "Twinksimstress", "Twistedcat", "Vain", "Valhallan", "Veve", "Viiavi", "Vikai", "Vikaixgreenllamas", "Vikaixrenorasims", "Vitiligo", "Vittleruniverse", "Vittleruniverses4", "Voidsimtric", "Vro", "Vxgglitter", "Waekey", "Watersim44","Weepingsimmer", "Wh", "Wiccandove", "Wildpixel", "Wildpixelxah00b", "Wildspit", "Wistfulcastle", "Wms", "Wondercarlotta", "Wyattsims", "Xghostx", "Xld", "Zaneidacu", "Zebrazest", "Zenx", "Zeussim", "Anlamveg", "Anonimux", "Hanraja", "AphroditeSims", "Nords", "Sifix")
-    
-    $creators = $creatorsArray | Sort-Object { $_.length } -Descending
+################################
 
-    $messyGeneral = "$messyfolder\General\CC_Unmerged"
-    $messyModern = "$messyfolder\Modern\CC_Unmerged"
+$startingVars = Get-Variable
 
-    $typeOfCC = @(<#--- -1 ---#> "brooch",
+###########VARS###############
+
+$creatorsList = @("001studiok", "26ink", "4w25", "Aa", "Ada", "Adiec", "Afs", "Ah00b", "Ah00bxbop", "Akuiyumi", "Aladdin", "Alessandrae", "Alexaarr", "Alfsi", "Algue", "Aliens", "Alin22", "Alsoidyia", "Aluckyday", "Amelylina", "Ametrinesims", "Ancasims", "Angissi", "Animalcostumes", "Anto", "Arenetta", "Arethabee", "Artup", "Atashi77", "Awesomeajuga", "Axa", "Axa2019hairs", "Axa2020hairs", "Axaparishairs", "Axaspringcollectionhairs", "Azleia","Baddiesims", "Badkarma", "BatsFromWesteros", "Beardsps", "Beardsseleng", "Beccab323", "BedTS4", "Berrybloom", "Beo", "Bexosims", "Bimbosim", "Birksche", "Blahberrypancake", "Blewis", "Bluemoonsims", "Bluesparkling", "Blvckls", "Bm", "Bobur", "Bobur", "Boobish", "Boobishenrique", "Boobishsimmandy", "Bps", "Breathinsims", "Brianitesims", "Busenur41", "Busratr", "Bustedpixels", "Butterscotchsims", "Buzzard", "Bybukovka", "Cabsims", "Caearsims", "Caesarsims", "Candysims4", "Capitalco", "Caribbeanpatch", "Carol", "Caroll91", "Casteru", "Catpintwoh", "Catplnt", "Catus", "Chippedsim", "Christopher067", "Citrontart", "Clumsyalien", "Cmt", "Cosimetic", "Cottoncandy", "Cowconuts", "Crayolablaze", "Crazycupcake", "Crownsondisplay", "Crypticsim", "Csxdsxoxtoakiyo", "Cubersimsxoakiyo", "Cupidjuice", "Curbs", "Cyberaddix", "Daylifesims", "Db", "Desysimmer", "Devilicious", "Dfjkellyhb5", "Disanity", "Divadoom", "Divinecap", "Dntsr", "Dogsill", "Domi", "Dreamtart", "Druidsim", "Ebonix","Eirflower", "Ellesmea", "Emythegamer", "Enrique", "Enriquexsentate", "Ersch", "Evoxy", "Fadedsprings", "Faez", "Feline", "Feralpoodles", "Fifthscreations", "Fivesims", "Fivesimsxwildpixel", "Florauh", "Frostsims", "G1g2", "Georgiaglm", "Gildedghosts", "Glaza", "Glitterberrysims", "Gpme", "Grafity", "Gramsims", "Greenllamas", "Grimcookies", "Habsims", "Hallowsims", "Hgcc", "Historicalsimslife", "Hoa", "Holosprite", "Horns", "Ht0", "Ikarisims", "Imadako", "Imvikai", "Infinityonsims", "Infusedpeach", "Insects", "Isjao", "Isjaoleeleesims1", "Ivosims", "Ixs", "Jhcosmetics", "Joliebean", "Joliebean", "Joliebeanxhfoxsentate", "Kamiiri", "Katverse", "Kiara24", "Kiarazurk", "Kiko", "Kismetsims", "Kiwisims4", "Kotcat", "Kotcatxisjao", "Kotcatxisjao", "Kumikya", "Kxi", "Kyuusims", "Leeleesims1", "Lexits4", "Lightdeficient", "Lilasims", "Linkysims", "Linzlu", "Lollaleeloo", "Lunacress", "Lune", "Luumia", "Magicbot", "Mannequin", "Marigold", "Marsosims", "Mathcope", "Maxiematch", "Mb", "Meghewlett", "Melissasims", "Mellouwsim", "Meltingedge", "Melunn", "Mer", "Miiko", "Milkyki", "Mk9", "Mlys", "Modmax", "Mohkii", "Moonchildlovesthenight", "Moonpres", "Moriel", "Moxxxes", "Msmarysims", "Msqsims", "Mssims", "Musae", "Musicalsimmer", "Myobi", "Naevyssims", "Natalieauditore", "Nell", "Nesurii", "Nickname", "Noiranddarksims", "Nolansims", "Nolansimsxteanmoon", "Nooboos", "Noodles", "Noodlesremixsaurus", "Nords", "Normalsiim", "Notdaniella", "Notegain", "Novvvas", "Nsxnd", "Numberswoman", "Oakiyo", "Obscurus", "Okruee", "Oksanaoliver", "Onyxsims4", "Opiumhoney", "Oranos", "Overkillsimmer", "Paranormaladdonhairs", "Parise", "Pbox", "Peachibloom", "Peebs", "Pfoten", "Pinealexple", "Pinkpatchy", "Plumbobteasociety", "Pnf", "Pooklet", "Pridesim", "Ps", "Pupcake", "Pupusims", "Pxelboy", "Pyxis", "Qicc", "Qrsims", "Qwerty", "Qwertysims", "Raiichuu", "Raspberrysims", "Remussirion", "Renorasims", "Retropixels", "Ridgecookies", "Ridgeport", "Rigelsims", "Ropey", "Rubybird", "Rustyxsentate", "Rusty", "S4simomo", "Saartje77", "Salttry", "Satterlly", "Saurus", "Saurusxbop", "Savagesim", "Savvysweet", "Savvyxgrim", "Sayasims", "Sclub", "Seleng", "Semplicesims", "Serenity", "Servotea", "Severinka", "Sfs", "Sg5150", "Sheabuttyr", "Shespeakssimlish", "Shuiisims", "Shysimblr", "Sideburns", "Simancholy", "Simandy", "Simarillion", "Simbiance", "Simbience", "Simcelebrity00", "Simduction", "Simgguk", "Simiracle", "Simlotus", "Simmandy", "Simmerstesia", "Simplesimmer", "Simplicitay", "Simplifiedsimi", "Sims3melancholic", "Sims41ife", "Sims4pack", "Simserenity", "Simshini", "Simstefani", "Simstrouble", "Simsza", "Simtric", "Simtric", "Sina", "Singingpickles", "Skellysim", "Sll", "Sls", "Slythersim", "Softerhaze", "Soli", "Soloriya", "Sondescent", "Sonyasims", "Sparrows", "Spinningplumbobs", "Spookyspookysim", "Ssb", "Sspx", "Stephaniesims", "Stephanine", "Stretchskeleton", "Subtlestubble", "Sugarowl", "Suiminntyuusims", "Sulsul", "Suzue", "Suzue", "Sweettacoplumbob", "Sxb", "Sxltss", "Syaovu", "Sylviemy", "Teanmoon", "Tekrisims", "Thecrimsonsimmer", "Thekalino", "Thessia", "Tiefling", "Tong", "Toskami", "Toskasims", "Trillyke", "Tssskellysim", "Tts", "Twinksimstress", "Twistedcat", "Vain", "Valhallan", "Veve", "Viiavi", "Vikai", "Vikaixgreenllamas", "Vikaixrenorasims", "Vitiligo", "Vittleruniverse", "Vittleruniverses4", "Voidsimtric", "Vro", "Vxgglitter", "Waekey", "Watersim44","Weepingsimmer", "Wh", "Wiccandove", "Wildpixel", "Wildpixelxah00b", "Wildspit", "Wistfulcastle", "Wms", "Wondercarlotta", "Wyattsims", "Xghostx", "Xld", "Zaneidacu", "Zebrazest", "Zenx", "Zeussim", "Anlamveg", "Anonimux", "Hanraja", "AphroditeSims", "Nords", "Sifix", "AdrienPastel", "Cozyyeons", "CrypticSim", "Birkshe", "CUUPIDCORP", "Dreamgirl", "TUDS", "Daylifesims", "Darlyssims", "ddaengsims", "deetronx", "deelitefulsimmer", "demondare", "dew", "disorganaized", "divinecap", "dyoreos", "eipi", "Georgiaglm", "gfv74", "gildedghosts", "gingerllama", "gloomfish", "graphix", "GS", "harluxe", "HFO", "HFOxSentate", "honeyssims4", "hos", "shy", "hydra", "icecreamforbreakfast", "icfb", "igor", "imf", "imsamuelcc", "ingeliwfs", "wasabisims", "isjao", "ixs", "ivosims", "iyasts4", "javasims", "jellymoo", "jhcosmetics", "johnnysims", "jius", "joliebean", "kamidus", "kamiiri", "kitty25939", "kiwisim4", "kksims", "kliekie", "km", "kotake", "kotcat", "kumikya", "kylie", "softsimmer", "landgraabbed", "leafmotif", "leeleesims", "azertysims", "liliili", "littledica", "lls", "llumisims", "ln", "lonelyboyts4", "lorysims", "lotusplum", "lotuswhim", "ls", "lutessa", "luumia", "luutzi", "lvndre", "maddy", "magichand", "mari", "marigolde", "marsosims", "marvell", "maytaiii", "mc", "mcltn", "mechtasims", "meghewlett", "melonsloth", "miiko", "miraim", "mmsims", "mooncakesims", "beeniebaby", "msmarysims", "mycupofcc", "mvg", "myshunosun", "nekochan", "nickname", "nolansims", "normalsiim", "nucrests", "oakiyo", "okruee", "oni", "onyxsims4", "parissimmer", "peachyfaerie", "severinka", "pixelette", "plummetya", "pnf", "powluna", "praleska", "pralinesims", "pvrplehaze", "pxelboy", "qicc", "qrsims", "quidx", "qvoix", "qwerty", "raspbxxry", "ratboy", "ravensim", "rb", "renorasims", "rheallsim", "rigelsims", "azertysims", "s4tink", "sammixox", "salttry", "scarlett", "scb", "sclub", "sehablasimlish", "seleng","semplicesims", "shespeakssimlish", "shibuisims", "shs", "simancholy", "simandy", "simiracle", "simkoos", "simmerianne93", "simplesimmer", "simmireenxherecirmxsimmerianne93", "sims3melancholic", "sims41ife", "simsberrry", "simstomaggie", "simstrouble", "simthingclever", "simtographies", "simtric", "sixamcc", "sleepingsims", "smxir", "softsimmer", "soguewimvikai", "solistair", "sp", "spinningplumbobs", "srslysims", "starkknaked", "starry", "stephanine", "storylsims", "sukyoolent", "sunivaa", "surelysims", "suzue", "sw", "tawney", "thisisthema", "tillie", "tiosims", "tpn", "trillyke", "ts4041", "turksimmer", "twistedcat", "uglysim", "ubp", "valleytulya", "valuka", "veigasims", "veve", "victorrmiguell", "vikaixgreenllamas", "vikaixrenorasims", "vxgglitter", "weepingsimmer", "wildpixel", "wistfulcastle", "xld", "yooniesim", "zenx", "zeussim", "zxtats4", "alladin", "amoebae". "bellassims", "bluecraving", "boonstow")
+
+$typeOfCC = @(<#--- -1 ---#> "brooch",
     <#--- 0 ---#> "valhallan",
     <#--- 1 ---#> "1900",
     <#--- 2 ---#> "1901",
@@ -682,44 +938,18 @@ Function Initialize-AutoSorting ($messyfolder) {
     <#--- 597 ---#> "art",
     <#--- 598 ---#> "neon",
     <#--- 599 ---#> "TV",
-    <#--- 600 ---#> "hair"
-    <#--- 600 ---#> "default"
-    )
+    <#--- 600 ---#> "hair",
+    <#--- 601 ---#> "default",
+    <#--- 602 ---#> "fishtank",
+    <#--- 603 ---#> "tank",
+    <#--- 604 ---#> "septum",
+    <#--- 605 ---#> "pig",
+    <#--- 606 ---#> "curl",
+    <#--- 607 ---#> "cami",
+    <#--- 608 ---#> "bodywear",
+    <#--- 609 ---#> "vintage")
 
-    $periodAll = "$messyfolder\Manual Sort - Historical\00_All"
-    $periodAncient = "$messyfolder\Manual Sort - Historical\01_Ancient"
-    $periodEarlyCiv = "$messyfolder\Manual Sort - Historical\02_EarlyCiv"
-    $periodMedieval = "$messyfolder\Manual Sort - Historical\03_Medieval (476CE)"
-    $periodRenaissance = "$messyfolder\Manual Sort - Historical\04_Renaissance (1300)"
-    $periodTudors = "$messyfolder\Manual Sort - Historical\05_Tudors (1485)"
-    $periodColonial = "$messyfolder\Manual Sort - Historical\06_Colonial (1620)"
-    $periodBaroque = "$messyfolder\Manual Sort - Historical\07_Baroque (1700)"
-    $periodIndustrial = "$messyfolder\Manual Sort - Historical\08_IndustrialAge (1760)"
-    $periodRococo = "$messyfolder\Manual Sort - Historical\09_Rococo (1730)"
-    $periodOldWest = "$messyfolder\Manual Sort - Historical\10_OldWest (1865)"
-    $periodVictorian = "$messyfolder\Manual Sort - Historical\11a_Victorian (1890)"
-    $periodSteam = "$messyfolder\Manual Sort - Historical\11b_Steampunk"
-    $period10s = "$messyfolder\Manual Sort - Historical\12_1910s"
-    $period20s = "$messyfolder\Manual Sort - Historical\13_1920s"
-    $period30s = "$messyfolder\Manual Sort - Historical\14_1930s"
-    $period40s = "$messyfolder\Manual Sort - Historical\15_1940s"
-    $period50s = "$messyfolder\Manual Sort - Historical\16_1950s"
-    $period60s = "$messyfolder\Manual Sort - Historical\17_1960s"
-    $period70s = "$messyfolder\Manual Sort - Historical\18_1970s"
-    $period80s = "$messyfolder\Manual Sort - Historical\19_1980s"
-    $period90s = "$messyfolder\Manual Sort - Historical\20_1990s"
-    $period2000s = "$messyfolder\Manual Sort - Historical\21_2000s"
-    $period2010s = "$messyfolder\Manual Sort - Historical\22_2010s"
-    $periodfantasy = "$messyfolder\Manual Sort - Historical\00a_Fantasy"
-    $periodscifi = "$messyfolder\Manual Sort - Historical\00b_SciFi"
-    $periodfuturistic = "$messyfolder\Manual Sort - Historical\00c_Futuristic"
-    $periodgrunge = "$messyfolder\Manual Sort - Historical\00d_Grunge"
-    $perioddystopia = "$messyfolder\Manual Sort - Historical\00f_DystopianApocalypse"
-    $periodcyberpunk = "$messyfolder\Manual Sort - Historical\00g_Cyberpunk"
-    $periodManualSort = "$messyfolder\Manual Sort - Historical"
-    $manualSort = "$messyfolder\Manual Sort"
-
-    $folderfortype = @(<#--- -1 ---#> "$messyGeneral\Accessories\Brooches",
+$folderfortype = @(<#--- -1 ---#> "$messyGeneral\Accessories\Brooches",
     <#--- 0 ---#> "$periodManualSort",
     <#--- 1 ---#> "$period10s",
     <#--- 2 ---#> "$period10s",
@@ -1321,75 +1551,55 @@ Function Initialize-AutoSorting ($messyfolder) {
     <#--- 598 ---#> "$messyModern\Buy",
     <#--- 599 ---#> "$messyModern\Buy",
     <#--- 600 ---#> "$messyGeneral\Hair"
-    <#--- 600 ---#> "$manualSort\Overrides"
-    )
+    <#--- 601 ---#> "$manualSort\Overrides"
+    <#--- 602 ---#> "$messyModern\Buy",
+    <#--- 603 ---#> "$messyModern\Clothing",
+    <#--- 604 ---#> "$messyModern\Accessories\JewelryMisc",
+    <#--- 605 ---#> "$messyGeneral\Hair",
+    <#--- 606 ---#> "$messyGeneral\Hair",
+    <#--- 607 ---#> "$messyModern\Clothing",
+    <#--- 607 ---#> "$messyModern\Clothing",
+    <#--- 607 ---#> "$periodManualSort")
 
-    $folderContents = Get-ChildItem -File $messyfolder
-    foreach ($package in $folderContents) {
-        if ($package.Basename -like "*Witheringsims*"){
-            if ($package.Basename -ilike "*dyeaccessory") {
-                New-Item -ItemType Directory -Force -Path "$messyGeneral\HairAccessories\WitheringSims"
-                Move-Item -Verbose -Path $($package.FullName) -Destination "$messyGeneral\HairAccessories\WitheringSims\$($package.Name)"
-            } elseif ($package.BaseName -ilike "*overlayacc*") {
-                New-Item -ItemType Directory -Force -Path "$messyModern\Accessories\ColorOverlays\WitheringSims"
-                Move-Item -Verbose -Path $($package.FullName) -Destination "$messyModern\Accessories\ColorOverlays\WitheringSims\$($package.Name)"
-            } elseif ($package.BaseName -ilike "*ombre*" -OR $package.BaseName -ilike "*hairbow*" -OR $package.BaseName -ilike "*hairclips*") {
-                New-Item -ItemType Directory -Force -Path "$messyModern\HairAccessories\WitheringSims"
-                Move-Item -Verbose -Path $($package.FullName) -Destination "$messyModern\HairAccessories\WitheringSims\$($package.Name)"
-            } elseif ($package.BaseName -ilike "*top*" -OR $package.BaseName -ilike "*bottom*" -OR $package.BaseName -ilike "*bodysuit*" -OR $package.BaseName -ilike "*jeans*" -OR $package.BaseName -ilike "*outfit*" -OR $package.BaseName -ilike "*pants*" -OR $package.BaseName -ilike "*skirt*") {
-                New-Item -ItemType Directory -Force -Path "$messyModern\Clothing\WitheringSims"
-                Move-Item -Verbose -Path $($package.FullName) -Destination "$messyModern\Clothing\WitheringSims\$($package.Name)"
-            } elseif ($package.BaseName -ilike "*hair*") {
-                New-Item -ItemType Directory -Force -Path "$messyGeneral\HairRecolors\WitheringSims"
-                Move-Item -Verbose -Path $($package.FullName) -Destination "$messyGeneral\HairRecolors\WitheringSims\$($package.Name)"
-            } elseif ($package.BaseName -ilike "*sneakers*" -OR $package.BaseName -ilike "*shoes*") {
-                New-Item -ItemType Directory -Force -Path "$messyModern\Shoes\WitheringSims"
-                Move-Item -Verbose -Path $($package.FullName) -Destination "$messyModern\Shoes\WitheringSims\$($package.Name)"
-            } else {
-                New-Item -ItemType Directory -Force -Path "$manualSort"
-                Move-Item -Verbose -Path $($package.FullName) -Destination "$manualSort\$($package.Name)"
-            }        
-        } else {
-            for ($typenum=0; $typeOfCC.Count -gt $typenum; $typenum++) {
-                $check = $typeOfCC[$typenum]
-                $numofCCType = $typeOfCC.Length
-                if ($package.BaseName -ilike "*$check*") { #check if it's a necklace etc
-                    $toMoveTo = $folderfortype[$typenum]
-                    New-Item -ItemType Directory -Force -Path $tomoveto
-                    $numofcreators = $creators.Length
-                    for ($creatorNum=0; $creators.Count -gt $creatorNum; $creatorNum++) {
-                        $search = $creators[$creatorNum]
-                        if ($package.BaseName -ilike "*$search*") { #check for creator name
-                            New-Item -ItemType Directory -Force -Path "$tomoveto\$search"
-                            Move-Item -Verbose -Path $($package.FullName) -Destination "$tomoveto\$search\$($package.Name)"
-                        } elseif ($numofcreators -le $creatorNum) {
-                            Move-Item -Verbose -Path $($package.FullName) -Destination "$tomoveto\$($package.Name)"
-                        }
-                    }
-                } elseif ($numofCCType -le $typenum) {
-                    Write-Host "File $($package.Name) did not match any known types."
-                    New-Item -ItemType Directory -Force -Path "$manualSort"
-                    Move-Item -Verbose -Path $($package.FullName) -Destination "$manualSort\$($package.Name)"
-                }
-            }
-        }
-    }
-}
+$periodAll = "$messyfolder\Manual Sort - Historical\00_All"
+$periodAncient = "$messyfolder\Manual Sort - Historical\01_Ancient"
+$periodEarlyCiv = "$messyfolder\Manual Sort - Historical\02_EarlyCiv"
+$periodMedieval = "$messyfolder\Manual Sort - Historical\03_Medieval (476CE)"
+$periodRenaissance = "$messyfolder\Manual Sort - Historical\04_Renaissance (1300)"
+$periodTudors = "$messyfolder\Manual Sort - Historical\05_Tudors (1485)"
+$periodColonial = "$messyfolder\Manual Sort - Historical\06_Colonial (1620)"
+$periodBaroque = "$messyfolder\Manual Sort - Historical\07_Baroque (1700)"
+$periodIndustrial = "$messyfolder\Manual Sort - Historical\08_IndustrialAge (1760)"
+$periodRococo = "$messyfolder\Manual Sort - Historical\09_Rococo (1730)"
+$periodOldWest = "$messyfolder\Manual Sort - Historical\10_OldWest (1865)"
+$periodVictorian = "$messyfolder\Manual Sort - Historical\11a_Victorian (1890)"
+$periodSteam = "$messyfolder\Manual Sort - Historical\11b_Steampunk"
+$period10s = "$messyfolder\Manual Sort - Historical\12_1910s"
+$period20s = "$messyfolder\Manual Sort - Historical\13_1920s"
+$period30s = "$messyfolder\Manual Sort - Historical\14_1930s"
+$period40s = "$messyfolder\Manual Sort - Historical\15_1940s"
+$period50s = "$messyfolder\Manual Sort - Historical\16_1950s"
+$period60s = "$messyfolder\Manual Sort - Historical\17_1960s"
+$period70s = "$messyfolder\Manual Sort - Historical\18_1970s"
+$period80s = "$messyfolder\Manual Sort - Historical\19_1980s"
+$period90s = "$messyfolder\Manual Sort - Historical\20_1990s"
+$period2000s = "$messyfolder\Manual Sort - Historical\21_2000s"
+$period2010s = "$messyfolder\Manual Sort - Historical\22_2010s"
+$periodfantasy = "$messyfolder\Manual Sort - Historical\00a_Fantasy"
+$periodscifi = "$messyfolder\Manual Sort - Historical\00b_SciFi"
+$periodfuturistic = "$messyfolder\Manual Sort - Historical\00c_Futuristic"
+$periodgrunge = "$messyfolder\Manual Sort - Historical\00d_Grunge"
+$perioddystopia = "$messyfolder\Manual Sort - Historical\00f_DystopianApocalypse"
+$periodcyberpunk = "$messyfolder\Manual Sort - Historical\00g_Cyberpunk"
+$periodManualSort = "$messyfolder\Manual Sort - Historical"
+$manualSort = "$messyfolder\Manual Sort"
 
-Function Start-CleanAndSortFolder ($messyfolder) {
-    Initialize-TidyCharacters $messyfolder
-    Initialize-AutoSorting $messyfolder
-}
+$messyfolder = "M:\The Sims 4 (Documents)\!UnmergedCC\NEWCC2022"
 
-################################
+######VARS############
 
-$startingVars = Get-Variable
+#$creatorsList = @("Apple", "Orange") <- this works, for some ungodly reason. the main one doesn't. help. 
 
-$messyfolder = "M:\The Sims 4 (Documents)\testingfolder"
-
-
-
-Start-CleanAndSortFolder $messyfolder
-
+Initialize-AutoSorting -messyfolder $messyfolder -creatorsList $creatorsList -typeOfCC $typesList -folderForType $folderForType -cleanFileNames $false 
 
 Out-Script
