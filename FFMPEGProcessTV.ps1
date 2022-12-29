@@ -6,11 +6,11 @@ Function Out-Script {
 }
 
 Function Start-MKVtoMP4 {
-    param (
-        [int]$threads,
+    param (       
         [switch]$dolby,
         [switch]$4kStandard,
         [switch]$1080p,
+        [int]$threads,
         [string]$location,        
         [object]$video
     )
@@ -42,7 +42,7 @@ Function Start-ExtractAudio {
     param (
         [switch]$complex,
         [switch]$basic,
-        [switch]$threads,
+        [int]$threads,
         [array]$letterMapping,
         [string]$location,
         [object]$video
@@ -75,11 +75,11 @@ Function Start-ExtractAudio {
 }
 
 Function Start-MakeScreencaps {
-    param (
-        [switch]$threads,
+    param (        
         [switch]$dolby,
         [switch]$4kStandard,
         [switch]$1080p,
+        [int]$threads,
         [string]$location,
         [object]$video
     )
@@ -116,7 +116,7 @@ $startingVars = Get-Variable
 
 $video = Get-Item "H:\TV\House of the Dragon\Season 1\House.of.the.Dragon.S01E01.2160p.HMAX.WEB-DL.x265.10bit.HDR.DDP5.1.Atmos-SMURF.mkv"
 
-Start-MakeScreencaps -4kStandard -location "H:\TV\House of the Dragon\Season 1\" -video $video
+Start-MKVtoMP4 -location "H:\TV\House of the Dragon\Season 1\" -video $video -4kStandard
 
 
 
