@@ -6,6 +6,37 @@ Function Out-Script {
     Exit
 }
 
+Function Initialize-MatchTwoArrays {
+    Param(
+        [array]$arrayToSort,
+        [array]$arrayToMatch
+    )
+    $numItems = $arrayToSort.Count
+    $numItems++
+    $sortedArray = @()
+    for ($itemsCount=0; $numItems -gt $itemsCount; $itemsCount++) {
+        $sortedArray += "$itemsCount"
+    }
+
+    $arraySorted = $arrayToSort | Sort-Object {$_.Length} -Descending
+    $sortednum=-1
+
+
+    foreach ($sortedOrderFile in $arraySorted) {
+        $sortednum++
+        $unsortednum=-1
+        #Write-Verbose "Checking $sortedOrderFile from sorted list."
+        foreach ($originalOrderFile in $typesList) {
+            $unsortednum++
+            #Write-Verbose "Checking $originalOrderFile from unsorted list."
+            if ($sortedOrderFile -contains $originalOrderFile) {
+                $sortedArray[$sortednum] = "$($arrayToMatch[$unsortedNum])"
+                Write-Verbose "$sortedOrderFile ($sortedNum) matched against $originalOrderFile ($unsortednum) which should corrolate to $($arrayToMatch[$unsortednum])."
+                Continue
+        }
+        }
+    }
+}
 Function Initialize-TidyCharacters ($folderToSort) {
     $matchlist = @(" "
     "["
@@ -161,7 +192,7 @@ Function Initialize-Autosorting {
         [array]$outliers, #outliers, things that should be moved no matter what
         [array]$outlierFolders, #matching folders
         [switch]$cleanFileNames #do we clean up the file names?
-    )   
+    )
 
     $logfile = "$folderWithPackages\Output.log"
     $logbakExists = Test-Path "$folderWithPackages\Output.log.bak"
@@ -311,6 +342,7 @@ Function Initialize-Autosorting {
 ################################
 
 $startingVars = Get-Variable
+$VerbosePreference = "Continue"
 
 ###########VARS###############
 $PSStyle.Progress.View = 'Minimal'
@@ -332,18 +364,21 @@ $historicals = @()
 $historicalFolders = @()
 
 $CSV = Import-CSV ".\Sims4SortCC.csv"
+Write-Verbose "Imported CSV"
 for ($lineCounter=0; $CSV.Types.Count -gt $lineCounter; $lineCounter++){
     if ($CSV.Types[$lineCounter] -notlike ''){
         $toAdd = Invoke-Expression """$($CSV.Types[$lineCounter])"""
         $typesList += $toAdd
     }
 }
+Write-Verbose "Imported types list."
 for ($lineCounter=0; $CSV.FoldersForType.Count -gt $lineCounter; $lineCounter++){    
     if ($CSV.FoldersForType[$lineCounter] -notlike ''){
         $toAdd = Invoke-Expression """$($CSV.FoldersForType[$lineCounter])"""
-        $typesFolderList += $toAdd
+        $typesFolders += $toAdd
     }
 }
+Write-Verbose "Imported types folder list."
 for ($lineCounter=0; $CSV.Creators.Count -gt $lineCounter; $lineCounter++){  
     if ($CSV.Creators[$lineCounter] -notlike ''){
         $toAdd1 = Invoke-Expression """$($CSV.Creators[$lineCounter])"""
@@ -351,42 +386,73 @@ for ($lineCounter=0; $CSV.Creators.Count -gt $lineCounter; $lineCounter++){
         $creatorsList += $toAdd
     }
 }
+Write-Verbose "Imported creators list."
 for ($lineCounter=0; $CSV.Recolorists.Count -gt $lineCounter; $lineCounter++){
     if ($CSV.Recolorists[$lineCounter] -notlike ''){
         $toAdd = Invoke-Expression """$($CSV.Recolorists[$lineCounter])"""
         $recoloristList += $toAdd
     }
 }
+Write-Verbose "Imported recolorists list."
 for ($lineCounter=0; $CSV.FoldersForRecolorists.Count -gt $lineCounter; $lineCounter++){
     if ($CSV.FoldersForRecolorists[$lineCounter] -notlike ''){
         $toAdd = Invoke-Expression """$($CSV.FoldersForRecolorists[$lineCounter])"""
         $recoloristFolders += $toAdd
     }
 }
+Write-Verbose "Imported recolorist folders list."
 for ($lineCounter=0; $CSV.Historicals.Count -gt $lineCounter; $lineCounter++){
     if ($CSV.Historicals[$lineCounter] -notlike ''){
         $toAdd = Invoke-Expression """$($CSV.Historicals[$lineCounter])"""
         $historicals += $toAdd
     }
 }
+Write-Verbose "Imported historicals list."
 for ($lineCounter=0; $CSV.HistoricalFolders.Count -gt $lineCounter; $lineCounter++){
     if ($CSV.HistoricalFolders[$lineCounter] -notlike ''){
         $toAdd = Invoke-Expression """$($CSV.HistoricalFolders[$lineCounter])"""
         $historicalFolders += $toAdd
     }
 }
+Write-Verbose "Imported historicals folders list."
 for ($lineCounter=0; $CSV.Outliers.Count -gt $lineCounter; $lineCounter++){
     if ($CSV.Outliers[$lineCounter] -notlike ''){
         $toAdd = Invoke-Expression """$($CSV.Outliers[$lineCounter])"""
         $outliers += $toAdd
     }
 }
+Write-Verbose "Imported outliers list."
 for ($lineCounter=0; $CSV.OutlierFolders.Count -gt $lineCounter; $lineCounter++){
     if ($CSV.OutlierFolders[$lineCounter] -notlike ''){
         $toAdd = Invoke-Expression """$($CSV.OutlierFolders[$lineCounter])"""
         $outlierFolders += $toAdd
     }
 }
+Write-Verbose "Imported outliers folders list."
+
+$creators = $creators | Sort-Object -Uniq
+$creators = $creators | Sort-Object { $_.length } -Descending
+
+Initialize-MatchTwoArrays -arrayToSort $typesList -arrayToMatch $typesFolders 
+
+$typesList = $script:arraySorted
+$typesFolders = $script:sortedArray
+
+Initialize-MatchTwoArrays -arrayToSort $recoloristList -arrayToMatch $recoloristFolders 
+
+$recoloristList = $script:arraySorted
+$recoloristFolders = $script:sortedArray
+
+Initialize-MatchTwoArrays -arrayToSort $historicals -arrayToMatch $historicalFolders 
+
+$historicals = $script:arraySorted
+$historicalFolders = $script:sortedArray
+
+
+Initialize-MatchTwoArrays -arrayToSort $outliers -arrayToMatch $outlierFolders 
+
+$outliers = $script:arraySorted
+$outlierFolders = $script:sortedArray
 
 if ($cleanUpFileNames -eq 0) {
     Initialize-AutoSorting -folderWithPackages $folderToSort -types $typesList -typesFolder $typesFolderList -creators $creatorsList -recolorist $recoloristList -historicals $historicals -historicalFolders $historicalFolders -outliers $outliers -outlierFolders $outlierFolders -cleanFileNames
