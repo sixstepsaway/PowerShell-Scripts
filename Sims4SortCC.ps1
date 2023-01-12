@@ -31,10 +31,10 @@ $numItems | Out-File $outfileTest -Append
 "itemsCount: `n" | Out-File $outfileTest -Append
 $itemsCount | Out-File $outfileTest -Append
 
-    Remove-Variable arraySorted
-    Remove-Variable sortedArray
-    Remove-Variable numItems
-    Remove-Variable itemsCount
+$arraySorted = @()
+$sortedArray = @()
+$numItems = 0
+$itemsCount = 0
 
 "Removed the variables for arraySorted, sortedArray, numItems and itemsCount.`n
 The following should be blank: `n" | Out-File $outfileTest -Append
@@ -421,7 +421,7 @@ $typesFolders | Out-File $outfileTest -Append
 RECOLORSTS:::`n" | Out-File $outfileTest -Append
 $recoloristList | Out-File $outfileTest -Append
 "`n
-RECOLORIST FOLDERS:::`n"
+RECOLORIST FOLDERS:::`n" | Out-File $outfileTest -Append
 $recoloristFolders | Out-File $outfileTest -Append
 "`n
 HISTORICALS:::`n" | Out-File $outfileTest -Append
@@ -473,7 +473,7 @@ $typesFolders | Out-File $outfileTest -Append
 RECOLORSTS:::`n" | Out-File $outfileTest -Append
 $recoloristList | Out-File $outfileTest -Append
 "`n
-RECOLORIST FOLDERS:::`n"
+RECOLORIST FOLDERS:::`n" | Out-File $outfileTest -Append
 $recoloristFolders | Out-File $outfileTest -Append
 "`n
 HISTORICALS:::`n" | Out-File $outfileTest -Append
