@@ -13,24 +13,23 @@ Function Initialize-MatchTwoArrays {
         [string]$debug
     )
 
-    "RUNNING MATCH PASS`n 
+    "`nRUNNING MATCH PASS`n 
 This pass is for $debug. `n
-`n
-Acquired params are the array to sort: `n
-$arrayToSort`n
-`n
-and the array to match:`n 
-$arrayToMatch.
-`n
+Acquired params are the array to sort: `n" | Out-File $outfileTest -Append
+$arrayToSort | Out-File $outfileTest -Append
+"`n
+and the array to match:" | Out-File $outfileTest -Append
+$arrayToMatch | Out-File $outfileTest -Append
+"`n
 Potentially lingering variables: `n
-arraySorted: `n
-$arraySorted `n
-sortedArray: `n
-$sortedArray `n
-numItems: `n
-$numItems `n
-itemsCount: `n
-$itemsCount" | Out-File $outfileTest -Append
+arraySorted: `n" | Out-File $outfileTest -Append
+$arraySorted | Out-File $outfileTest -Append
+"sortedArray: `n" | Out-File $outfileTest -Append
+$sortedArray | Out-File $outfileTest -Append
+"numItems: `n" | Out-File $outfileTest -Append
+$numItems | Out-File $outfileTest -Append
+"itemsCount: `n" | Out-File $outfileTest -Append
+$itemsCount | Out-File $outfileTest -Append
 
     Remove-Variable arraySorted
     Remove-Variable sortedArray
@@ -75,7 +74,7 @@ $itemsCount | Out-File $outfileTest -Append
             $unsortednum++
             "Now checking through the original array and comparing the two. We are comparing $sortedOrderItem from the sorted array with $originalOrderItem (number $unsortednum) in the unsorted array." | Out-File $outfileTest -Append
             if ($sortedOrderItem -contains $originalOrderItem) {
-                ":::::::::::::: `n
+                "`n`n`n`n`n:::::::::::::: MATCH MADE :::::::::::::::: `n
                 A match has been made. $sortedOrderItem matches $originalOrderItem. SortedArray will now be populated with the correct corrolated item." | Out-File $outfileTest -Append
                 $script:sortedArray[$sortednum] = "$($arrayToMatch[$unsortedNum])"
                 "Item $sortednum of the sorted array is:`n
@@ -83,7 +82,7 @@ $itemsCount | Out-File $outfileTest -Append
                 `n
                 The full SortedArray currently is: `n" | Out-File $outfileTest -Append
                 $sortedArray | Out-File $outfileTest -Append
-                ":::::::::::::
+                "`n`n`n`n`n`n::::::::::::: CONTINUING ::::::::::: 
                 `nThe script will now continue." | Out-File $outfileTest -Append
                 Write-Verbose "$sortedOrderItem ($sortedNum) matched against $originalOrderItem ($unsortednum) which should corrolate to $($arrayToMatch[$unsortednum])."
                 Continue
@@ -401,7 +400,11 @@ Write-Verbose "Imported outliers folders list."
 
 $outfileTest = "$foldertosort\!TestingLog.log"
 
-":::BEFORE ORDERING::: `n
+"Useful search terms:
+`n `"RUNNING MATCH PASS`"
+`n `"MATCH MADE`"
+`n
+`n`n`n`n`n:::BEFORE ORDERING::: `n
 `n
 OUTLIERS::: `n" | Out-File $outfileTest
 $outliers | Out-File $outfileTest -Append
