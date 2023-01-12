@@ -288,9 +288,9 @@ for ($lineCounter=0; $CSV.Types.Count -gt $lineCounter; $lineCounter++){
 Write-Verbose "Imported types list."
 
 #import column folders for type to variable
-for ($lineCounter=0; $CSV.FoldersForType.Count -gt $lineCounter; $lineCounter++){    
-    if ($CSV.FoldersForType[$lineCounter] -notlike ''){
-        $toAdd = Invoke-Expression """$($CSV.FoldersForType[$lineCounter])"""
+for ($lineCounter=0; $CSV.FoldersforType.Count -gt $lineCounter; $lineCounter++){    
+    if ($CSV.FoldersforType[$lineCounter] -notlike ''){
+        $toAdd = Invoke-Expression """$($CSV.FoldersforType[$lineCounter])"""
         $typesFolders += $toAdd
     }
 }
@@ -306,9 +306,9 @@ for ($lineCounter=0; $CSV.Recolorists.Count -gt $lineCounter; $lineCounter++){
 Write-Verbose "Imported recolorists list."
 
 #import column recolorist folders to variable
-for ($lineCounter=0; $CSV.FoldersForRecolorists.Count -gt $lineCounter; $lineCounter++){
-    if ($CSV.FoldersForRecolorists[$lineCounter] -notlike ''){
-        $toAdd = Invoke-Expression """$($CSV.FoldersForRecolorists[$lineCounter])"""
+for ($lineCounter=0; $CSV.FoldersforRecolorists.Count -gt $lineCounter; $lineCounter++){
+    if ($CSV.FoldersforRecolorists[$lineCounter] -notlike ''){
+        $toAdd = Invoke-Expression """$($CSV.FoldersforRecolorists[$lineCounter])"""
         $recoloristFolders += $toAdd
     }
 }
@@ -350,7 +350,35 @@ for ($lineCounter=0; $CSV.OutlierFolders.Count -gt $lineCounter; $lineCounter++)
 }
 Write-Verbose "Imported outliers folders list."
 
+$outfileTest = "$foldertosort\!TestingLog.log"
 
+"BEFORE ORDERING:::" | Out-File $outfileTest
+"OUTLIERS:::" | Out-File $outfileTest -Append
+$outliers | Out-File $outfileTest -Append
+"" | Out-File $outfileTest -Append
+"OUTLIER FOLDERS:::" | Out-File $outfileTest -Append
+$outlierFolders | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"TYPES:::" | Out-File $outfileTest -Append
+$typesList | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"TYPES FOLDERS:::" | Out-File $outfileTest -Append
+$typesFolders | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"RECOLORSTS:::" | Out-File $outfileTest -Append
+$recoloristList | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"RECOLORIST FOLDERS:::" | Out-File $outfileTest -Append
+$recoloristFolders | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"HISTORICALS:::" | Out-File $outfileTest -Append
+$historicals  | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"HISTORICAL FOLDERS:::" | Out-File $outfileTest -Append
+$historicalFolders | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+
+<#
 #reorder creators array to sort by length, descending
 $creators = $creators | Sort-Object -Uniq
 $creators = $creators | Sort-Object { $_.length } -Descending
@@ -377,15 +405,32 @@ $historicals = $script:arraySorted
 $historicalFolders = $script:sortedArray
 
 
-$outliers
-$outlierFolders
-$typesList
-$typesFolders
-$recoloristList
-$recoloristFolders
-$historicals 
-$historicalFolders
-
+"AFTER ORDERING:::" | Out-File $outfileTest -Append
+"OUTLIERS:::" | Out-File $outfileTest -Append
+$outliers | Out-File $outfileTest -Append
+"" | Out-File $outfileTest -Append
+"OUTLIER FOLDERS:::" | Out-File $outfileTest -Append
+$outlierFolders | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"TYPES:::" | Out-File $outfileTest -Append
+$typesList | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"TYPES FOLDERS:::" | Out-File $outfileTest -Append
+$typesFolders | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"RECOLORSTS:::" | Out-File $outfileTest -Append
+$recoloristList | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"RECOLORIST FOLDERS:::" | Out-File $outfileTest -Append
+$recoloristFolders | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"HISTORICALS:::" | Out-File $outfileTest -Append
+$historicals  | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+"HISTORICAL FOLDERS:::" | Out-File $outfileTest -Append
+$historicalFolders | Out-File $outfileTest
+"" | Out-File $outfileTest -Append
+#>
 
 #Initialize-Autosorting
 
