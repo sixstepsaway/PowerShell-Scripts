@@ -9,36 +9,82 @@ Function Out-Script {
 Function Initialize-MatchTwoArrays {
     Param(
         [array]$arrayToSort,
-        [array]$arrayToMatch
+        [array]$arrayToMatch,
+        [string]$debug
     )
+
+    "RUNNING MATCH PASS`n 
+This pass is for $debug. `n
+`n
+Acquired params are the array to sort: `n
+$arrayToSort`n
+`n
+and the array to match:`n 
+$arrayToMatch.
+`n
+Potentially lingering variables: `n
+arraySorted: `n
+$arraySorted `n
+sortedArray: `n
+$sortedArray `n
+numItems: `n
+$numItems `n
+itemsCount: `n
+$itemsCount" | Out-File $outfileTest -Append
+
     Remove-Variable arraySorted
     Remove-Variable sortedArray
     Remove-Variable numItems
     Remove-Variable itemsCount
 
+"Removed the variables for arraySorted, sortedArray, numItems and itemsCount.`n
+The following should be blank: `n
+$arraySorted`n
+$sortedArray`n
+$numItems`n
+$itemsCount`
+If the above is not blank, something went wrong.
+`n" | Out-File $outfileTest -Append
+
     $numItems = $arrayToSort.Count
+    "numItems has been established as $numItems." | Out-File $outfileTest -Append
     $numItems++
+    "numItems is now $numItems." | Out-File $outfileTest -Append
     $script:sortedArray = @()
+    "sortedArray established and should be blank. It is:`n 
+    $sortedArray" | Out-File $outfileTest -Append
     for ($itemsCount=0; $numItems -gt $itemsCount; $itemsCount++) {
         $script:sortedArray += "$itemsCount"
     }
+    "SortedArray has been populated with numbers as strings. SortedArray: `n
+    $sortedArray" | Out-File $outfileTest -Append
 
     $script:arraySorted = $arrayToSort | Sort-Object {$_.Length} -Descending
+    "arraySorted is the sorted version of the first array. It has been sorted:`n
+    $script:arraySorted" | Out-File $outfileTest -Append
+
+    "The sortednum is the number for parsing through. It has been established as $sortednum." | Out-File $outfileTest -Append
     $sortednum=-1
 
 
-    foreach ($sortedOrderItem in $script:arraySorted) {
+    foreach ($sortedOrderItem in $script:arraySorted) {        
         $sortednum++
         $unsortednum=-1
-        #Write-Verbose "Checking $sortedOrderItem from sorted list."
+        "Parsing through the sorted version of the array. Currently checking $sortedOrderItem, which is number $sortednum" | Out-File $outfileTest -Append
         foreach ($originalOrderItem in $typesList) {
             $unsortednum++
-            #Write-Verbose "Checking $originalOrderItem from unsorted list."
+            "Now checking through the original array and comparing the two. We are comparing $sortedOrderItem from the sorted array with $originalOrderItem (number $unsortednum) in the unsorted array." | Out-File $outfileTest -Append
             if ($sortedOrderItem -contains $originalOrderItem) {
+                "A match has been made. $sortedOrderItem matches $originalOrderItem. SortedArray will now be populated with the correct corrolated item." | Out-File $outfileTest -Append
                 $script:sortedArray[$sortednum] = "$($arrayToMatch[$unsortedNum])"
+                "Item $sortednum of the sorted array is:`n
+                $($sortedArray[$sortednum])`n
+                `n
+                The full SortedArray currently is: `n
+                $sortedArray" | Out-File $outfileTest -Append
                 Write-Verbose "$sortedOrderItem ($sortedNum) matched against $originalOrderItem ($unsortednum) which should corrolate to $($arrayToMatch[$unsortednum])."
                 Continue
-        }
+            }
         }
     }
 }
@@ -255,7 +301,7 @@ $outlierFolders = @()
 $historicals = @()
 $historicalFolders = @()
 
-$logfile = "$folderWithPackages\Output.log"
+$logfile = "$folderToSort\Output.log"
     $logbakExists = Test-Path "$folderWithPackages\Output.log.bak"
     $logexists = Test-Path "$folderWithPackages\Output.log"
     if ($logbakExists -eq $true) {
@@ -352,85 +398,84 @@ Write-Verbose "Imported outliers folders list."
 
 $outfileTest = "$foldertosort\!TestingLog.log"
 
-"BEFORE ORDERING:::" | Out-File $outfileTest
-"OUTLIERS:::" | Out-File $outfileTest -Append
-$outliers | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"OUTLIER FOLDERS:::" | Out-File $outfileTest -Append
-$outlierFolders | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"TYPES:::" | Out-File $outfileTest -Append
-$typesList | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"TYPES FOLDERS:::" | Out-File $outfileTest -Append
-$typesFolders | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"RECOLORSTS:::" | Out-File $outfileTest -Append
-$recoloristList | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"RECOLORIST FOLDERS:::" | Out-File $outfileTest -Append
-$recoloristFolders | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"HISTORICALS:::" | Out-File $outfileTest -Append
-$historicals  | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"HISTORICAL FOLDERS:::" | Out-File $outfileTest -Append
-$historicalFolders | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
+":::BEFORE ORDERING::: `n
+`n
+OUTLIERS::: `n
+$outliers `n
+`n
+OUTLIER FOLDERS::: `n
+$outlierFolders`n
+`n
+TYPES:::`n
+$typesList`n
+`n
+TYPES FOLDERS:::`n
+$typesFolders`n
+`n
+RECOLORSTS:::`n
+$recoloristList`n
+`n
+RECOLORIST FOLDERS:::`n
+$recoloristFolders`n
+`n
+HISTORICALS:::`n
+$historicals`n
+`n
+HISTORICAL FOLDERS:::`n
+$historicalFolders" | Out-File $outfileTest
 
-<#
+
 #reorder creators array to sort by length, descending
 $creators = $creators | Sort-Object -Uniq
 $creators = $creators | Sort-Object { $_.length } -Descending
 
 
 #reorder outliers array to sort by length, descending, and match against second array
-Initialize-MatchTwoArrays -arrayToSort $outliers -arrayToMatch $outlierFolders 
+Initialize-MatchTwoArrays -arrayToSort $outliers -arrayToMatch $outlierFolders -debug "OUTLIERS (1)"
 $outliers = $script:arraySorted
 $outlierFolders = $script:sortedArray
 
 #reorder types array to sort by length, descending, and match against second array
-Initialize-MatchTwoArrays -arrayToSort $typesList -arrayToMatch $typesFolders 
+Initialize-MatchTwoArrays -arrayToSort $typesList -arrayToMatch $typesFolders -debug "TYPES (2)"
 $typesList = $script:arraySorted
 $typesFolders = $script:sortedArray
 
 #reorder recolorist array to sort by length, descending, and match against second array
-Initialize-MatchTwoArrays -arrayToSort $recoloristList -arrayToMatch $recoloristFolders 
+Initialize-MatchTwoArrays -arrayToSort $recoloristList -arrayToMatch $recoloristFolders -debug "RECOLORISTS (3)"
 $recoloristList = $script:arraySorted
 $recoloristFolders = $script:sortedArray
 
 #reorder historicals array to sort by length, descending, and match against second array
-Initialize-MatchTwoArrays -arrayToSort $historicals -arrayToMatch $historicalFolders 
+Initialize-MatchTwoArrays -arrayToSort $historicals -arrayToMatch $historicalFolders -debug "HISTORICALS (3)"
 $historicals = $script:arraySorted
 $historicalFolders = $script:sortedArray
 
+":::AFTER ORDERING::: `n
+`n
+OUTLIERS::: `n
+$outliers `n
+`n
+OUTLIER FOLDERS::: `n
+$outlierFolders`n
+`n
+TYPES:::`n
+$typesList`n
+`n
+TYPES FOLDERS:::`n
+$typesFolders`n
+`n
+RECOLORSTS:::`n
+$recoloristList`n
+`n
+RECOLORIST FOLDERS:::`n
+$recoloristFolders`n
+`n
+HISTORICALS:::`n
+$historicals`n
+`n
+HISTORICAL FOLDERS:::`n
+$historicalFolders" | Out-File $outfileTest -Append
 
-"AFTER ORDERING:::" | Out-File $outfileTest -Append
-"OUTLIERS:::" | Out-File $outfileTest -Append
-$outliers | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"OUTLIER FOLDERS:::" | Out-File $outfileTest -Append
-$outlierFolders | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"TYPES:::" | Out-File $outfileTest -Append
-$typesList | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"TYPES FOLDERS:::" | Out-File $outfileTest -Append
-$typesFolders | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"RECOLORSTS:::" | Out-File $outfileTest -Append
-$recoloristList | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"RECOLORIST FOLDERS:::" | Out-File $outfileTest -Append
-$recoloristFolders | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"HISTORICALS:::" | Out-File $outfileTest -Append
-$historicals  | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-"HISTORICAL FOLDERS:::" | Out-File $outfileTest -Append
-$historicalFolders | Out-File $outfileTest -Append
-"" | Out-File $outfileTest -Append
-#>
 
 #Initialize-Autosorting
 
