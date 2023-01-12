@@ -1,4 +1,3 @@
-
 Function Out-Script {
     Write-Host "Finishing up."
     $endingVars = Get-Variable
@@ -65,13 +64,19 @@ Function Initialize-MoveFiles ($results) {
     }
 
     $foldersToMake = $foldersToMake | Sort-Object -Unique
+    $results = $results | Sort-Object -Property package -Unique
 
     foreach ($folder in $foldersToMake) {
-        New-Item -ItemType Directory $folder
+        New-Item -ItemType Directory -Force $folder
     }
-
+    $alreadymoved = @()
     foreach ($file in $results) {
-        Move-Item -Path $file.PackageLoc -Destination "$($file.Destination)\$($file.Package)"
+        if ($alreadymoved -contains $file) {
+            Continue
+        } else {
+            Move-Item -literalpath $file.PackageLoc -Destination "$($file.Destination)\$($file.Package)"
+            $alreadymoved += $file
+        }
     }
 
 }
@@ -100,8 +105,7 @@ Function Initialize-ParseCheckerArray {
             $results.Add($toAdd) | Out-Null
         }
     }
-    #Initialize-MoveFiles 
-    $results
+    Initialize-MoveFiles $results
 }
 
 ################################
