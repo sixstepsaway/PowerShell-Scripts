@@ -357,25 +357,25 @@ $outfileTest = "$foldertosort\!TestingLog.log"
 $outliers | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "OUTLIER FOLDERS:::" | Out-File $outfileTest -Append
-$outlierFolders | Out-File $outfileTest
+$outlierFolders | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "TYPES:::" | Out-File $outfileTest -Append
-$typesList | Out-File $outfileTest
+$typesList | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "TYPES FOLDERS:::" | Out-File $outfileTest -Append
-$typesFolders | Out-File $outfileTest
+$typesFolders | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "RECOLORSTS:::" | Out-File $outfileTest -Append
-$recoloristList | Out-File $outfileTest
+$recoloristList | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "RECOLORIST FOLDERS:::" | Out-File $outfileTest -Append
-$recoloristFolders | Out-File $outfileTest
+$recoloristFolders | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "HISTORICALS:::" | Out-File $outfileTest -Append
-$historicals  | Out-File $outfileTest
+$historicals  | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "HISTORICAL FOLDERS:::" | Out-File $outfileTest -Append
-$historicalFolders | Out-File $outfileTest
+$historicalFolders | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 
 <#
@@ -410,25 +410,25 @@ $historicalFolders = $script:sortedArray
 $outliers | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "OUTLIER FOLDERS:::" | Out-File $outfileTest -Append
-$outlierFolders | Out-File $outfileTest
+$outlierFolders | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "TYPES:::" | Out-File $outfileTest -Append
-$typesList | Out-File $outfileTest
+$typesList | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "TYPES FOLDERS:::" | Out-File $outfileTest -Append
-$typesFolders | Out-File $outfileTest
+$typesFolders | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "RECOLORSTS:::" | Out-File $outfileTest -Append
-$recoloristList | Out-File $outfileTest
+$recoloristList | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "RECOLORIST FOLDERS:::" | Out-File $outfileTest -Append
-$recoloristFolders | Out-File $outfileTest
+$recoloristFolders | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "HISTORICALS:::" | Out-File $outfileTest -Append
-$historicals  | Out-File $outfileTest
+$historicals  | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 "HISTORICAL FOLDERS:::" | Out-File $outfileTest -Append
-$historicalFolders | Out-File $outfileTest
+$historicalFolders | Out-File $outfileTest -Append
 "" | Out-File $outfileTest -Append
 #>
 
