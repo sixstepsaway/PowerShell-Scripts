@@ -38,12 +38,12 @@ $itemsCount" | Out-File $outfileTest -Append
     Remove-Variable itemsCount
 
 "Removed the variables for arraySorted, sortedArray, numItems and itemsCount.`n
-The following should be blank: `n
-$arraySorted`n
-$sortedArray`n
-$numItems`n
-$itemsCount`
-If the above is not blank, something went wrong.
+The following should be blank: `n" | Out-File $outfileTest -Append
+$arraySorted | Out-File $outfileTest -Append
+$sortedArray | Out-File $outfileTest -Append
+$numItems | Out-File $outfileTest -Append
+$itemsCount | Out-File $outfileTest -Append
+"If the above is not blank, something went wrong.
 `n" | Out-File $outfileTest -Append
 
     $numItems = $arrayToSort.Count
@@ -51,17 +51,17 @@ If the above is not blank, something went wrong.
     $numItems++
     "numItems is now $numItems." | Out-File $outfileTest -Append
     $script:sortedArray = @()
-    "sortedArray established and should be blank. It is:`n 
-    $sortedArray" | Out-File $outfileTest -Append
+    "sortedArray established and should be blank. It is:`n" | Out-File $outfileTest -Append 
+    $sortedArray | Out-File $outfileTest -Append
     for ($itemsCount=0; $numItems -gt $itemsCount; $itemsCount++) {
         $script:sortedArray += "$itemsCount"
     }
-    "SortedArray has been populated with numbers as strings. SortedArray: `n
-    $sortedArray" | Out-File $outfileTest -Append
+    "SortedArray has been populated with numbers as strings. SortedArray: `n" | Out-File $outfileTest -Append
+    $sortedArray | Out-File $outfileTest -Append
 
     $script:arraySorted = $arrayToSort | Sort-Object {$_.Length} -Descending
-    "arraySorted is the sorted version of the first array. It has been sorted:`n
-    $script:arraySorted" | Out-File $outfileTest -Append
+    "arraySorted is the sorted version of the first array. It has been sorted:`n" | Out-File $outfileTest -Append
+    $script:arraySorted | Out-File $outfileTest -Append
 
     "The sortednum is the number for parsing through. It has been established as $sortednum." | Out-File $outfileTest -Append
     $sortednum=-1
@@ -75,13 +75,16 @@ If the above is not blank, something went wrong.
             $unsortednum++
             "Now checking through the original array and comparing the two. We are comparing $sortedOrderItem from the sorted array with $originalOrderItem (number $unsortednum) in the unsorted array." | Out-File $outfileTest -Append
             if ($sortedOrderItem -contains $originalOrderItem) {
-                "A match has been made. $sortedOrderItem matches $originalOrderItem. SortedArray will now be populated with the correct corrolated item." | Out-File $outfileTest -Append
+                ":::::::::::::: `n
+                A match has been made. $sortedOrderItem matches $originalOrderItem. SortedArray will now be populated with the correct corrolated item." | Out-File $outfileTest -Append
                 $script:sortedArray[$sortednum] = "$($arrayToMatch[$unsortedNum])"
                 "Item $sortednum of the sorted array is:`n
                 $($sortedArray[$sortednum])`n
                 `n
-                The full SortedArray currently is: `n
-                $sortedArray" | Out-File $outfileTest -Append
+                The full SortedArray currently is: `n" | Out-File $outfileTest -Append
+                $sortedArray | Out-File $outfileTest -Append
+                ":::::::::::::
+                `nThe script will now continue." | Out-File $outfileTest -Append
                 Write-Verbose "$sortedOrderItem ($sortedNum) matched against $originalOrderItem ($unsortednum) which should corrolate to $($arrayToMatch[$unsortednum])."
                 Continue
             }
@@ -400,29 +403,29 @@ $outfileTest = "$foldertosort\!TestingLog.log"
 
 ":::BEFORE ORDERING::: `n
 `n
-OUTLIERS::: `n
-$outliers `n
-`n
-OUTLIER FOLDERS::: `n
-$outlierFolders`n
-`n
-TYPES:::`n
-$typesList`n
-`n
-TYPES FOLDERS:::`n
-$typesFolders`n
-`n
-RECOLORSTS:::`n
-$recoloristList`n
-`n
-RECOLORIST FOLDERS:::`n
-$recoloristFolders`n
-`n
-HISTORICALS:::`n
-$historicals`n
-`n
-HISTORICAL FOLDERS:::`n
-$historicalFolders" | Out-File $outfileTest
+OUTLIERS::: `n" | Out-File $outfileTest
+$outliers | Out-File $outfileTest -Append
+"`n
+OUTLIER FOLDERS::: `n" | Out-File $outfileTest -Append
+$outlierFolders | Out-File $outfileTest -Append
+"`n
+TYPES:::`n" | Out-File $outfileTest -Append
+$typesList | Out-File $outfileTest -Append
+"`n
+TYPES FOLDERS:::`n" | Out-File $outfileTest -Append
+$typesFolders | Out-File $outfileTest -Append
+"`n
+RECOLORSTS:::`n" | Out-File $outfileTest -Append
+$recoloristList | Out-File $outfileTest -Append
+"`n
+RECOLORIST FOLDERS:::`n"
+$recoloristFolders | Out-File $outfileTest -Append
+"`n
+HISTORICALS:::`n" | Out-File $outfileTest -Append
+$historicals | Out-File $outfileTest -Append
+"`n
+HISTORICAL FOLDERS:::`n" | Out-File $outfileTest -Append
+$historicalFolders | Out-File $outfileTest -Append
 
 
 #reorder creators array to sort by length, descending
@@ -452,29 +455,29 @@ $historicalFolders = $script:sortedArray
 
 ":::AFTER ORDERING::: `n
 `n
-OUTLIERS::: `n
-$outliers `n
-`n
-OUTLIER FOLDERS::: `n
-$outlierFolders`n
-`n
-TYPES:::`n
-$typesList`n
-`n
-TYPES FOLDERS:::`n
-$typesFolders`n
-`n
-RECOLORSTS:::`n
-$recoloristList`n
-`n
-RECOLORIST FOLDERS:::`n
-$recoloristFolders`n
-`n
-HISTORICALS:::`n
-$historicals`n
-`n
-HISTORICAL FOLDERS:::`n
-$historicalFolders" | Out-File $outfileTest -Append
+OUTLIERS::: `n" | Out-File $outfileTest -Append
+$outliers | Out-File $outfileTest -Append
+"`n
+OUTLIER FOLDERS::: `n" | Out-File $outfileTest -Append
+$outlierFolders | Out-File $outfileTest -Append
+"`n
+TYPES:::`n" | Out-File $outfileTest -Append
+$typesList | Out-File $outfileTest -Append
+"`n
+TYPES FOLDERS:::`n" | Out-File $outfileTest -Append
+$typesFolders | Out-File $outfileTest -Append
+"`n
+RECOLORSTS:::`n" | Out-File $outfileTest -Append
+$recoloristList | Out-File $outfileTest -Append
+"`n
+RECOLORIST FOLDERS:::`n"
+$recoloristFolders | Out-File $outfileTest -Append
+"`n
+HISTORICALS:::`n" | Out-File $outfileTest -Append
+$historicals | Out-File $outfileTest -Append
+"`n
+HISTORICAL FOLDERS:::`n" | Out-File $outfileTest -Append
+$historicalFolders | Out-File $outfileTest -Append
 
 
 #Initialize-Autosorting
