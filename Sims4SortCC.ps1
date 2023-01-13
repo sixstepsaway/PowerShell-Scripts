@@ -62,19 +62,29 @@ Function Initialize-MoveFiles ($results) {
     foreach ($file in $results) {
         $foldersToMake += $results.Destination
     }
+    Write-Host "Results:"
+    $results
 
     $foldersToMake = $foldersToMake | Sort-Object -Unique
     $results = $results | Sort-Object -Property package -Unique
 
+    Write-Host "Results unique:"
+    $results
+
+    $foldersToMake
+
     foreach ($folder in $foldersToMake) {
+        Write-Verbose "Creating folder: $folder."
         New-Item -ItemType Directory -Force $folder
+
     }
     $alreadymoved = @()
     foreach ($file in $results) {
         if ($alreadymoved -contains $file) {
             Continue
         } else {
-            Move-Item -literalpath $file.PackageLoc -Destination "$($file.Destination)\$($file.Package)"
+            Write-Verbose "Moving $($file.PackageLoc) to $($file.Destination)\$($file.Package)."
+            Move-Item -Path $file.PackageLoc -Destination "$($file.Destination)\$($file.Package)" 
             $alreadymoved += $file
         }
     }
@@ -90,7 +100,6 @@ Function Initialize-ParseCheckerArray {
     foreach ($item in $arraytoparse) {
         $num++
         $resultChildren = Get-ChildItem $folderToSort | Where-Object { $_.BaseName -ilike "*$($item.Type)*" }
-        #$resultChildren
         foreach ($result in $resultChildren) {
             $toAdd = "" | Select-Object "Package", "PackageLoc", "Match", "Destination"
             Write-Verbose "Adding $($result.Name) to results."
