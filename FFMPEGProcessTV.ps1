@@ -36,29 +36,29 @@ Function Start-MKVtoMP4 {
 
     if ($UHD) {
         if ($crop) {
-            $mainSettings = "-fps_mode passthrough -vf $cropping,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p -c:v libx264 -crf 15 -r:v 30 -c:a copy -preset ultrafast -tune fastdecode -max_muxing_queue_size 1024"
-            $proxySettings = "-fps_mode passthrough -vf $cropping,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,zscale=640:360 -c:v libx264 -crf 25 -r:v 30 -c:a copy -preset ultrafast -tune fastdecode  -max_muxing_queue_size 1024"
+            $mainSettings = "-vf $cropping,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p -c:v libx265 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024"
+            $proxySettings = "-vf $cropping,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,zscale=640:360 -c:v libx265 -r:v 30 -c:a copy -preset slow -tune fastdecode  -max_muxing_queue_size 1024"
         } else {
-            $mainSettings = "-fps_mode passthrough -vf zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p -c:v libx264 -crf 15 -r:v 30 -c:a copy -preset ultrafast -tune fastdecode -max_muxing_queue_size 1024"
-            $proxySettings = "-fps_mode passthrough -vf zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p -c:v libx264 -crf 25 -r:v 30 -c:a copy -preset ultrafast -tune fastdecode -max_muxing_queue_size 1024 `"scale=640:360`""
+            $mainSettings = "-vf zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p -c:v libx265 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024"
+            $proxySettings = "-vf zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p -c:v libx265 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024 `"scale=640:360`""
         }
         
     } elseif ($dolby) {
         if ($crop) {
-            $mainSettings = "-fps_mode passthrough -c:v -c:v libx265 -crf 15 -vf `"$cropping,hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12`" -c:a copy"
-            $proxySettings = "-fps_mode passthrough -c:v libx265 -crf 25 -profile:v baseline -pix_fmt yuv420p10le -vf `"scale=640:360,hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12,$cropping`" -c:a copy"
+            $mainSettings = "-c:v libx265 -vf `"$cropping,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12`" -c:a copy"
+            $proxySettings = "-c:v libx265 -profile:v baseline -pix_fmt yuv420p10le -vf `"scale=640:360,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12,$cropping`" -c:a copy"
         } else {
-            $mainSettings = "-fps_mode passthrough -c:v -c:v libx265 -crf 15 -vf `"hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12`" -c:a copy"
-            $proxySettings = "-fps_mode passthrough -c:v libx265 -crf 25 -profile:v baseline -pix_fmt yuv420p10le -fps_mode passthrough -vf `"hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12,scale=640:360`" -c:a copy"
+            $mainSettings = "-c:v libx265 -vf `"hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12`" -c:a copy"
+            $proxySettings = "-c:v libx265 -profile:v baseline -pix_fmt yuv420p10le -vf `"hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12,scale=640:360`" -c:a copy"
         }
         
     } elseif ($HD) {
         if ($crop) {
-            $mainSettings = "-fps_mode passthrough -c:a copy $cropping"
-            $proxySettings = "-fps_mode passthrough -c:v libx264 -profile:v baseline -crf 16  -pix_fmt yuv420p -vf `"$cropping,scale=640:360`" -c:a copy" 
+            $mainSettings = "-c:v libx265 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024 -vf $cropping"
+            $proxySettings = "-c:v libx265 -profile:v baseline  -pix_fmt yuv420p -vf `"$cropping,scale=640:360`" -c:a copy" 
         } else {
-            $mainSettings = "-fps_mode passthrough -c:a copy"
-            $proxySettings = "-fps_mode passthrough -c:v libx264 -profile:v baseline -crf 16  -pix_fmt yuv420p -vf `"scale=640:360`" -c:a copy" 
+            $mainSettings = " -c:v libx265 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024"
+            $proxySettings = "-c:v libx265 -profile:v baseline  -pix_fmt yuv420p -vf `"scale=640:360`" -c:a copy" 
         }
         
     } else {
@@ -158,9 +158,9 @@ Function Start-MakeScreencaps {
         }
         
     } elseif ($dolby) {
-        $screenSettings = "-vf `"hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12,select='not(mod(n\,10))'`""
+        $screenSettings = "-vf hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12,select='not(mod(n\,10))'"
     } elseif ($HD) {
-        $screenSettings = "`"select='not(mod(n\,10))'`""
+        $screenSettings = "-vf select='not(mod(n\,10))'"
     }
 
     $alreadyExists = Test-Path "$location\Screencaps\$($video.BaseName)\*.jpg"
@@ -184,7 +184,6 @@ Function Start-GetCrop {
         [switch]$square,
         [string]$location
     )
-    $video = $videos[0]
     ffmpeg -ss "00:05:00" -t "00:10:00" -i "$video" -vf "cropdetect=24:16:0" "$location\croptest.mkv"
 }
 
@@ -198,65 +197,122 @@ Function Start-TestCrop {
     ffmpeg -ss 00:10:00 -t 00:11:00 -i "$video" -vf $cropTest -sn "$location\tests\croptest-crop.mkv" -y
 }
 
+Function Start-MakeGifs {
+    param (       
+        [switch]$dolby,
+        [switch]$UHD,
+        [switch]$HD,
+        [string]$gifStart,
+        [string]$gifEnd,
+        [switch]$crop,
+        [string]$cropSize,
+        [int]$threads,
+        [string]$location,
+        [object]$video,
+        [string]$gifName
+    )
+
+    New-Item -Itemtype Directory "$location\Gifs" -Force
+
+    if ($threads -gt 0) {
+        $threadsSetting = "-threads $threads"
+    }
+
+    if ($crop) {
+        $cropping = $cropSize
+    }
+
+    #$sampleSet = "-ss $gifStart -t $gifEnd"
+
+    if ($UHD) {
+        if ($crop) {
+            $mainSettings = "-vf $cropping,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,scale=640:360 -c:v libx265 -crf 15 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024"
+        } else {
+            $mainSettings = "-vf zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,scale=640:360 -c:v libx265 -crf 15 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024"
+        }
+        
+    } elseif ($dolby) {
+        if ($crop) {
+            $mainSettings = "-c:v libx265 -crf 15 -vf $cropping,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12,scale=640:360 -c:a copy"
+        } else {
+            $mainSettings = "-c:v libx265 -crf 15 -vf hwupload,tonemap_opencl=tonemap=bt2390:desat=0:peak=100:format=nv12,hwdownload,format=nv12,scale=640:360 -c:a copy"
+        }
+        
+    } elseif ($HD) {
+        if ($crop) {
+            $mainSettings = "-c:v libx265 -crf 15 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024 -vf $cropping,scale=640:360"
+        } else {
+            $mainSettings = " -c:v libx265 -crf 15 -r:v 30 -c:a copy -preset slow -tune fastdecode -max_muxing_queue_size 1024 -vf scale=640:360"
+        }
+        
+    } else {
+        Write-Host "No settings provided. Exiting."
+        Exit
+    }
+    $mainRun = "ffmpeg $sampleSet -i `"$video`" $mainSettings $threadsSetting `"$location\Gifs\$gifName.mp4`" -y"
+
+        Invoke-Expression $mainRun
+}
+
 #FUNCTIONS ABOVE#
 
 $startingVars = Get-Variable
 
 #SCRIPT START#
-Function Start-RunMultiple {
-    $itemOneLoc = "H:\TV\House of the Dragon\Season 1"
-    $itemOneEpisodes = Get-ChildItem "H:\TV\House of the Dragon\Season 1\*.mkv"
-    
-    $itemTwoLoc = "J:\TV\The Witcher\Season 1"
-    $itemTwoEpisodes = Get-ChildItem "J:\TV\The Witcher\Season 1\*.mkv"
 
-    $itemThreeLoc = "J:\TV\The Witcher\Season 2"
-    $itemThreeEpisodes = Get-ChildItem "J:\TV\The Witcher\Season 2\*.mkv"
+$video = Get-Item "K:\TV\Wednesday\Season 1\Wednesday.S01E01.Wednesdays.Child.is.Full.of.Woe.2160p.NF.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-APEX.mkv"
+$videos = Get-ChildItem "K:\TV\Wednesday\Season 1"
+$location = "K:\TV\Wednesday\Season 1"
+$witcherCrop = "crop=3840:2160:0:0"
+$basicCrop = "crop=iw:in_h-2*120"
+$customLetterMapping = @("L", "R", "C", "LFE", "Ls", "Rs")
+$croptest = "crop=3840:2000:0:0"
+$useThreads = 0
 
-    $itemFourLoc = "H:\TV\Upright\Season 1"
-    $itemFourEpisodes = "H:\TV\Upright\Season 1\*.mkv"
+$wednesday = Get-ChildItem "K:\TV\Wednesday\Season 1"
+$medium = Get-ChildItem "H:\TV\Medium" -Directory
+$witcher = Get-ChildItem "J:\TV\The Witcher" -Directory
+$upright = Get-ChildItem "H:\TV\Upright" -Directory
+$hotd = Get-ChildItem "H:\TV\House of the Dragon\Season 1"
 
-    $itemFiveLoc = "H:\TV\Upright\Season 2"
-    $itemFiveEpisodes = "H:\TV\Upright\Season 2\*.mkv"
+foreach ($episode in $wednesday) {
+    Start-MKVtoMP4 -cropSize $basicCrop -location $location -video $episode -threads $useThreads -UHD -crop
+    Start-ExtractAudio -Complex -location $location -video $episode 
+    Start-MakeScreencaps -location $location -video $episode -cropSize $basicCrop -threads $useThreads -UHD -crop
+}
 
-    $useThreads = 8
-
-    foreach ($episode in $itemThreeEpisodes) { #WITCHER SEASON 2
-        Start-MKVtoMP4 -cropSize $basicCrop -location $itemThreeLoc -video $episode -threads $useThreads -UHD -crop
-        Start-ExtractAudio -Complex -location $itemThreeLoc -video $episode 
-        Start-MakeScreencaps -location $itemThreeLoc -video $episode -cropSize $basicCrop -threads $useThreads -UHD -crop
-    }
-
-    foreach ($episode in $itemOneEpisodes) { #HOUSE OF THE DRAGON
-        Start-MKVtoMP4 -cropSize $basicCrop -location $itemOneLoc -video $episode -threads $useThreads -UHD -crop
-        Start-ExtractAudio -Complex -location $itemOneLoc -video $episode 
-        Start-MakeScreencaps -location $itemOneLoc -video $episode -cropSize $basicCrop -threads $useThreads -UHD -crop
-    }
-
-    foreach ($episode in $itemTwoEpisodes) { #WITCHER SEASON 1
-        Start-MKVtoMP4 -location $itemTwoLoc -video $episode -threads $useThreads -HD
-        Start-ExtractAudio -Complex -location $itemTwoLoc -video $episode 
-        Start-MakeScreencaps -location $itemTwoLoc -video $episode -threads $useThreads -HD
-    }
-
-    foreach ($episode in $itemFourEpisodes) { #UPRIGHT SEASON 1
-        Start-MKVtoMP4 -location $itemFourLoc -video $episode -threads $useThreads -HD
-        Start-ExtractAudio -Complex -location $itemFourLoc -video $episode 
-        Start-MakeScreencaps -location $itemFourLoc -video $episode -threads $useThreads -HD
-    }
-    foreach ($episode in $itemFiveEpisodes) { #UPRIGHT SEASON 2
-        Start-MKVtoMP4 -location $itemFiveLoc -video $episode -threads $useThreads -HD
-        Start-ExtractAudio -Complex -location $itemFiveLoc -video $episode 
-        Start-MakeScreencaps -location $itemFiveLoc -video $episode -threads $useThreads -HD
+foreach ($folder in $medium) {
+    $videos = Get-ChildItem $folder
+    foreach ($episode in $videos) {
+        Start-MKVtoMP4 -location $location -video $episode -threads $useThreads -UHD
+        Start-ExtractAudio -Complex -location $location -video $episode 
+        Start-MakeScreencaps -location $location -video $episode -threads $useThreads -UHD
     }
 }
 
-$basicCrop = "crop=iw:in_h-2*120"
-$customLetterMapping = @("L", "R", "C", "LFE", "Ls", "Rs")
+foreach ($folder in $witcher) {
+    $videos = Get-ChildItem $folder
+    foreach ($episode in $videos) {
+        Start-MKVtoMP4 -location $location -video $episode -threads $useThreads -cropSize $witcherCrop -crop -UHD
+        Start-ExtractAudio -Complex -location $location -video $episode 
+        Start-MakeScreencaps -location $location -video $episode -threads $useThreads -cropSize $witcherCrop -crop -UHD
+    }
+}
 
+foreach ($folder in $upright) {
+    $videos = Get-ChildItem $folder
+    foreach ($episode in $videos) {
+        Start-MKVtoMP4 -location $location -video $episode -threads $useThreads -UHD
+        Start-ExtractAudio -Complex -location $location -video $episode 
+        Start-MakeScreencaps -location $location -video $episode -threads $useThreads -UHD
+    }
+}
 
-
-Start-RunMultiple
+foreach ($episode in $wednesday) {
+    Start-MKVtoMP4 -cropSize $basicCrop -location $location -video $episode -threads $useThreads -UHD -crop
+    Start-ExtractAudio -Complex -location $location -video $episode 
+    Start-MakeScreencaps -location $location -video $episode -cropSize $basicCrop -threads $useThreads -UHD -crop
+}
 
 
 #SCRIPT END#
