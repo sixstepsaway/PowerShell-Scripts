@@ -12,31 +12,83 @@ Function Out-LogMessage {
 
 
 Function Initialize-TidyCharacters ($folderToSort) {
-    $matchlist = @(" "
-    "["
-    "]"
-    "(" 
-    ")"
-    "{"
-    "}" 
-    "@" 
-    "&"
-    "%"
-    "$"
-    "="
-    "+"
-    "#"
-    "'"
-    "_"
-    "-"
-    " "
-    ","
-    "."
-    "'"
-    "❤"
-    "`“"
-    "❤") 
-    $replacelist = @(<#---0---#> "") 
+    $matchlist = @(<#---0---#>" "
+    <#---1---#>"["
+    <#---2---#>"]"
+    <#---3---#>"(" 
+    <#---4---#>")"
+    <#---5---#>"{"
+    <#---6---#>"}" 
+    <#---7---#>"@" 
+    <#---8---#>"&"
+    <#---9---#>"%"
+    <#---10---#>"$"
+    <#---11---#>"="
+    <#---12---#>"+"
+    <#---13---#>"#"
+    <#---14---#>"'"
+    <#---15---#>"_"
+    <#---16---#>"-"
+    <#---17---#>" "
+    <#---18---#>","
+    <#---19---#>"."
+    <#---20---#>"'"
+    <#---21---#>"❤"
+    <#---22---#>"`“"
+    <#---23---#>"❤"
+    <#---24---#>"°"
+    <#---25---#>"æ"
+    <#---26---#>"ø"
+    <#---27---#>"✰"
+    <#---28---#>"❤"
+    <#---29---#>"`""
+    <#---30---#>"С"
+    <#---31---#>"②"
+    <#---32---#>"①"
+    <#---33---#>"③"
+    <#---34---#>"!"
+    <#---35---#>""
+    <#---36---#>""
+    <#---37---#>"") 
+    $replacelist = @(<#---0---#>""
+    <#---1---#>""
+    <#---2---#>""
+    <#---3---#>""
+    <#---4---#>""
+    <#---5---#>""
+    <#---6---#>""
+    <#---7---#>""
+    <#---8---#>""
+    <#---9---#>""
+    <#---10---#>""
+    <#---11---#>""
+    <#---12---#>""
+    <#---13---#>""
+    <#---14---#>""
+    <#---15---#>""
+    <#---16---#>""
+    <#---17---#>""
+    <#---18---#>""
+    <#---19---#>""
+    <#---20---#>""
+    <#---21---#>""
+    <#---22---#>""
+    <#---23---#>""
+    <#---24---#>""
+    <#---25---#>"ae"
+    <#---26---#>"o"
+    <#---27---#>""
+    <#---28---#>""
+    <#---29---#>""
+    <#---30---#>"C"
+    <#---31---#>"2"
+    <#---32---#>"1"
+    <#---33---#>"3"
+    <#---34---#>""
+    <#---35---#>""
+    <#---36---#>""
+    <#---37---#>""
+    ) 
 
     $message = "Preparing to clean file names."
     Out-LogMessage
@@ -58,7 +110,7 @@ Function Initialize-TidyCharacters ($folderToSort) {
         for ($num=0; $filestoClean.Count -gt $num; $num++) {
             $currentFile = $filestoClean[$num]
             if ($currentFile.Basename -imatch [regex]::Escape($matchlist[$i])) {
-                $newname = $currentFile.BaseName -replace [regex]::Escape($matchlist[$i]),$replacelist[0]
+                $newname = $currentFile.BaseName -replace [regex]::Escape($matchlist[$i]),$replacelist[$i]
                 $fileExists = Test-Path -LiteralPath "$folderToSort\$newname.package"
                 if ($fileExists -eq $false) {
                     Rename-Item $currentFile -NewName "$newname.package" | Out-Null
@@ -549,7 +601,9 @@ $PSStyle.Progress.View = 'Minimal'
 
 $yesNoQuestion = "&Yes", "&No"
 $cleanUpFileNames = $Host.UI.PromptForChoice("File Names", "Clean file names up?", $yesNoQuestion, 1)
-
+if ($cleanUpFileNames -eq 0) {
+    $onlyClean = $Host.UI.PromptForChoice("Cleaning", "ONLY Clean file names up?", $yesNoQuestion, 1)
+}
 $debug = $Host.UI.PromptForChoice("Debug", "Run in debug (verbose) mode?", $yesNoQuestion, 1)
 
 if ($debug -eq 0){
@@ -673,6 +727,17 @@ $creatorCollection = $creatorCollection | Sort-Object -Property Length -Descendi
 $message = "Reordered lists."
 Out-LogMessage
 $stages=1
+
+if ($onlyClean -eq 0) {
+    $message = "Tidying the file names!"
+    Out-LogMessage
+    Initialize-TidyCharacters -folderToSort $folderToSort
+    $endtime = Get-Date -Format "MM/dd/yyyy HH:mm K"
+    $message = "Sorting started at $starttime and ended at $endtime."
+    Out-LogMessage
+    Out-Script
+}
+
 if ($cleanUpFileNames -eq 0) {    
     $todo = 6
 
