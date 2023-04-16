@@ -37,7 +37,7 @@ Function Out-LogMessage {
 <# To log, simply set $message and then run the function. For example: #>
 
 $message = "This is a log file."
-Out-Logfile 
+Out-LogMessage
 
 <# Tadah! #>
 
